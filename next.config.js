@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  output: 'export',
+  basePath: '/snapshot-signer',
+  assetPrefix: '/snapshot-signer/',
 }
 
-module.exports = nextConfig
+module.exports = nextConfig;
