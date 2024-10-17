@@ -178,7 +178,7 @@ export function Wallet() {
         setIsClaimed(true);
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Error during verification. Please check your signature and try again.';
+      const errorMessage = (error as any).response?.data?.error || 'Error during verification. Please check your signature and try again.';
       setClaimedMessage(errorMessage);
       setIsClaimed(false);
     }
@@ -209,12 +209,12 @@ export function Wallet() {
               onChange={(e) => setWalletAddress(e.target.value)}
               style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
             />
-            <Button onClick={checkEligibility} style={{ marginTop: '16px' }}>
+            <Button onClick={checkEligibility}>
               Check Eligibility
             </Button>
-            <Text color={textColor} style={{ marginTop: '8px' }}>{eligibilityMessage}</Text>
+            <Text color={textColor}>{eligibilityMessage}</Text>
             {isEligible && (
-              <Button onClick={() => setStep(2)} style={{ marginTop: '16px' }}>
+              <Button onClick={() => setStep(2)}>
                 Connect Wallet to Proceed to Step 2
               </Button>
             )}
@@ -224,24 +224,13 @@ export function Wallet() {
 
       {step === 2 && (
         <Box py={8} px={4}>
-          <Stack style={{ marginBottom: '32px' }} justifyContent="center" alignItems="center">
+          <Stack>
             <Chain
               name={chain.pretty_name}
               logo={getChainLogo(chain.chain_name)!}
             />
           </Stack>
-          <Stack
-            direction="column"
-            mx="auto"
-            px={4}
-            py={8}
-            maxWidth="21rem"
-            borderRadius="lg"
-            justifyContent="center"
-            alignItems="center"
-            backgroundColor={backgroundColor}
-            boxShadow={boxShadow}
-          >
+          <Stack direction="vertical">
             {username ? <User name={username} /> : null}
             {address ? (
               <ClipboardCopyText text={address} truncate="middle" />
@@ -263,7 +252,7 @@ export function Wallet() {
             ) : null}
 
             {address && (
-              <Button onClick={handleConnect} style={{ marginTop: '16px' }}>
+              <Button onClick={handleConnect}>
                 Proceed to Step 3
               </Button>
             )}
@@ -273,7 +262,7 @@ export function Wallet() {
 
       {step === 3 && (
         <Box py={8} px={4}>
-          <Text color={textColor} style={{ marginBottom: '16px' }}>Step 3: JSON Result</Text>
+          <Text color={textColor}>Step 3: JSON Result</Text>
           <pre style={{ backgroundColor: backgroundColor, padding: "16px", borderRadius: "8px" }}>
             {JSON.stringify(resultJson)}
           </pre>
@@ -288,33 +277,33 @@ export function Wallet() {
             />
           </Box>
           <Box>
-            <Button onClick={validateAndClaim} style={{ marginTop: '16px' }}>
+            <Button onClick={validateAndClaim}>
               Validate and Claim your EPIX
             </Button>
             <pre style={{ backgroundColor: backgroundColor, padding: "16px", borderRadius: "8px" }}>
-              <Text color={isClaimed ? 'green' : 'red'} style={{ marginTop: '8px' }}>{claimedMessage}</Text>
+              <Text color={isClaimed ? 'green' : 'red'}>{claimedMessage}</Text>
             </pre>
           </Box>
-          <Text color={textColor} style={{ marginTop: '16px' }}>Follow the instructions below to sign the message:</Text>
+          <Text color={textColor}>Follow the instructions below to sign the message:</Text>
           <Box>
-            <img src="/images/Sign-With-Wallet.png" alt="Step to Sign the Message" style={{ width: '100%', marginBottom: '16px' }} />
-            <img src="/images/Copy-Signature.png" alt="Step to Copy Signature" style={{ width: '100%' }} />
+            <img src="/snapshot-signer/images/Sign-With-Wallet.png" alt="Step to Sign the Message" style={{ width: '100%', marginBottom: '16px' }} />
+            <img src="/snapshot-signer/images/Copy-Signature.png" alt="Step to Copy Signature" style={{ width: '100%' }} />
           </Box>
         </Box>
       )}
 
       {/* Dashboard for Total Claimed and Total Claims */}
       <Box py={8} px={4}>
-        <Text color={textColor} style={{ marginTop: '16px' }}>Snapshot and Coin Circulation:</Text>
+        <Text color={textColor}>Snapshot and Coin Circulation:</Text>
         <Text color={textColor}>On block 3 million, a snapshot will be taken of the total x42 coin supply, which will be 23,689,538. This will be the total pool from which both the community airdrop and the community pool allocation will be derived.</Text>
-        <Text color={textColor} style={{ marginTop: '16px' }}>Ensuring a 50/50 Balance:</Text>
+        <Text color={textColor} >Ensuring a 50/50 Balance:</Text>
         <Text color={textColor}>To maintain this balance, every community member who claims their airdrop may not receive a full 1:1 of their claimed X42:EPIX coins, as a small amount will be allocated back to the community pool. This will not be a voluntary process, but it will be automated, seamless, and fair. Every claimer will have the same percentage removed to maintain the balance.</Text>
         <Text color={textColor}>For example, if the community claims 14 million EPIX, the target is for the community to hold 11,844,769 coins and the community pool to also hold 11,844,769 coins. To achieve this, the claim portal will display a deduction of around 15.4% of the claimed coins from each community member, which will be redirected to the community pool.</Text>
         <Text color={textColor}>However, if fewer coins are claimed (e.g., 5 million), the community pool would hold a much larger percentage than 50%, which would actually benefit the community! In such cases, the deduction rate would be lower, or no deduction may be required at all.</Text>
       </Box>
       <hr />
       <Box py={8} px={4}>
-        <Text color={textColor} style={{ marginBottom: '16px' }}>Dashboard</Text>
+        <Text color={textColor}>Dashboard</Text>
         <Text color={textColor}>Total Claimed: {(totalClaimed / 100000000).toFixed(8)}</Text>
         <Text color={textColor}>Total Claims: {totalClaims}</Text>
         <Text color={textColor}>Time Remaining to Claim the Airdrop: {(() => { const remainingTime = Math.max(0, new Date('2025-02-01T00:00:00Z').getTime() - Date.now()); const months = Math.floor(remainingTime / (1000 * 60 * 60 * 24 * 30)); const days = Math.floor((remainingTime % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24)); const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60)); return `${months} months, ${days} days, ${hours} hours, ${minutes} minutes`; })()}</Text>
@@ -325,14 +314,14 @@ export function Wallet() {
       <hr />
       {/* Paginated List of Last 5 Claims */}
       <Box py={8} px={4}>
-        <Text color={textColor} style={{ marginBottom: '16px' }}>Last 5 Claims</Text>
-        {claims.map((claim, index) => (
-          <Box key={index} style={{ marginBottom: '16px', padding: '16px', border: '1px solid #ccc', borderRadius: '8px' }}>
+        <Text color={textColor}>Last 5 Claims</Text>
+        {claims.map((claim: { raw_json: any, signature: string }, index) => (
+          <Box key={index}>
             <Text color={textColor}>Raw JSON:</Text>
             <pre style={{ backgroundColor: backgroundColor, padding: '8px', borderRadius: '4px' }}>
               {JSON.stringify(claim.raw_json)}
             </pre>
-            <Text color={textColor} style={{ marginTop: '8px' }}>Signature: {claim.signature}</Text>
+            <Text color={textColor}>Signature: {claim.signature}</Text>
           </Box>
         ))}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
