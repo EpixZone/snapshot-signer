@@ -9,6 +9,7 @@ const nextConfig = {
   },
   basePath: isProd ? '/snapshot-signer' : '',
   assetPrefix: isProd ? '/snapshot-signer/' : '',
+  trailingSlash: true,
 };
 
 module.exports = nextConfig;
