@@ -109,23 +109,16 @@ export function Wallet() {
 
       if (isvalid && !iswitness) {
         // Check the balance of the validated address
-        const balanceResponse = await axios.post(
-          "https://x42.blockcore-indexer.silknodes.io/api/query/addresses/balance",
-          [walletAddress],
-          {
-            headers: {
-              "accept": "*/*",
-              "Content-Type": "application/json-patch+json",
-            },
-          }
+        const balanceResponse = await axios.get(
+          `https://snapapi.epix.zone/check-balance?address=${walletAddress}`
         );
 
-        if (balanceResponse.data.length > 0 && balanceResponse.data[0].balance > 0) {
-          setSnapshotBalance(balanceResponse.data[0].balance);
-          setEligibilityMessage(`This address is eligible. Balance eligible for claim: ${(balanceResponse.data[0].balance / 100000000).toFixed(8)}. Estimated deduction: ${(totalClaimed / 100000000 > 23689538 / 2) ? ((balanceResponse.data[0].balance * 0.154).toFixed(8)) : 0}`);
+        if (balanceResponse.data.balance > 0) {
+          setSnapshotBalance(balanceResponse.data.balance);
+          setEligibilityMessage(`This address is eligible. Balance eligible for claim: ${(balanceResponse.data.balance / 100000000).toFixed(8)}. Estimated deduction: ${(totalClaimed / 100000000 > 23689538 / 2) ? ((balanceResponse.data.balance * 0.154).toFixed(8)) : 0}`);
           setIsEligible(true);
         } else {
-          setEligibilityMessage("This address does not have any x42 in it, and a balance is required to proceed.");
+          setEligibilityMessage("This address does not have any balance, and a balance is required to proceed.");
           setIsEligible(false);
         }
       } else if (iswitness) {
