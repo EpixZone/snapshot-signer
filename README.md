@@ -69,9 +69,9 @@ The application is built with React, leveraging the Interchain UI, Cosmos Kit, a
    - The "Validate and Claim your EPIX" button sends the signature and other data to verify and claim tokens.
 
 ## API Endpoints
-- **Eligibility Check**: `https://snapapi.epix.zone/verify-address?address=<walletAddress>`
-- **Balance Check**: `https://x42.blockcore-indexer.silknodes.io/api/query/addresses/balance`
-- **Claim Verification**: `https://snapapi.epix.zone/verify-snapshot`
+- **Address verification check**: `https://snapapi.epix.zone/verify-address?address=<walletAddress>`
+- **Balance check**: `https://snapapi.epix.zone/check-balance?address=<walletAddress>`
+- **Claim verification**: `https://snapapi.epix.zone/verify-snapshot`
 
 ## Notes
 - Place the instruction images (`Sign-With-Wallet.png` and `Copy-Signature.png`) in the `/public/images/` directory.
