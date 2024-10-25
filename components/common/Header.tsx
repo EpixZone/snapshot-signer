@@ -7,6 +7,7 @@ import {
   useColorModeValue,
   useTheme,
 } from "@interchain-ui/react";
+import { Logo } from "./Logo";
 
 const stacks = ["x42", "Epix"];
 
@@ -14,22 +15,27 @@ export function Header() {
   return (
     <>
       <Box textAlign="center">
+        <Box display="flex" justifyContent="center" alignItems="flex-start" gap="$8">
+          <Logo />
+          <Text
+            as="h1"
+            fontWeight="$extrabold"
+            fontSize={{ mobile: "$6xl", tablet: "$10xl" }}
+          >
+            Snapshot Claimer!
+          </Text>
+        </Box>
         <Text
-          as="h1"
-          fontWeight="$extrabold"
-          fontSize={{ mobile: "$6xl", tablet: "$10xl" }}
+          as="h2"
+          fontWeight="$bold"
           attributes={{
-            marginBottom: "$8",
+            padding: "$12",
           }}
         >
-          Epix Snapshot Claimer!
-        </Text>
-        <Text as="h2" fontWeight="$bold">
           <Text
             as="span"
             fontSize={{ mobile: "$3xl", tablet: "$8xl", desktop: "$8xl" }}
-          >
-          </Text>
+          ></Text>
           <Text
             as="span"
             fontSize={{ mobile: "$3xl", tablet: "$8xl", desktop: "$8xl" }}
