@@ -30,8 +30,7 @@ function CreateCosmosApp({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider>
       {/* @ts-ignore */}
-      <ChainProvider
-        chains={chains}
+      <ChainProvider chains={chains}
         assetLists={assets}
         wallets={wallets}
         walletConnectOptions={{
