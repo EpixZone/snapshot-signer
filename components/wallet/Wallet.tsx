@@ -185,10 +185,9 @@ export function Wallet() {
           setEligibilityMessage(
             `This address is eligible. Balance eligible for claim: ${(
               balanceResponse.data.balance / 100000000
-            ).toFixed(8)}. Estimated deduction: ${
-              totalClaimed / 100000000 > 23689538 / 2
-                ? (balanceResponse.data.balance * 0.154).toFixed(8)
-                : 0
+            ).toFixed(8)}. Estimated deduction: ${totalClaimed / 100000000 > 23689538 / 2
+              ? (balanceResponse.data.balance * 0.154).toFixed(8)
+              : 0
             }`
           );
           setIsEligible(true);
@@ -308,12 +307,12 @@ export function Wallet() {
             placeholder="Enter x42 wallet address"
             value={walletAddress}
             onChange={(e) => setWalletAddress(e.target.value)}
-            // style={{
-            //   width: "100%",
-            //   padding: "8px",
-            //   borderRadius: "4px",
-            //   border: "1px solid #ccc",
-            // }}
+          // style={{
+          //   width: "100%",
+          //   padding: "8px",
+          //   borderRadius: "4px",
+          //   border: "1px solid #ccc",
+          // }}
           />
           <Box display="flex" justifyContent="space-between">
             <StyledButton onClick={openModal}>More About</StyledButton>
@@ -364,7 +363,7 @@ export function Wallet() {
             </Box>
 
             {message &&
-            [WalletStatus.Error, WalletStatus.Rejected].includes(status) ? (
+              [WalletStatus.Error, WalletStatus.Rejected].includes(status) ? (
               <Warning text={`${wallet?.prettyName}: ${message}`} />
             ) : null}
 
@@ -421,12 +420,12 @@ export function Wallet() {
           </Text>
           <Box>
             <img
-              src="/snapshot-signer/images/Sign-With-Wallet.png"
+              src="/images/Sign-With-Wallet.png"
               alt="Step to Sign the Message"
               style={{ width: "100%", marginBottom: "16px" }}
             />
             <img
-              src="/snapshot-signer/images/Copy-Signature.png"
+              src="/images/Copy-Signature.png"
               alt="Step to Copy Signature"
               style={{ width: "100%" }}
             />
@@ -493,7 +492,7 @@ export function Wallet() {
             );
             const days = Math.floor(
               (remainingTime % (1000 * 60 * 60 * 24 * 30)) /
-                (1000 * 60 * 60 * 24)
+              (1000 * 60 * 60 * 24)
             );
             const hours = Math.floor(
               (remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
