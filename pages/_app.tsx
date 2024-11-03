@@ -16,6 +16,7 @@ import styled from "styled-components";
 
 const StyledBox = styled(Box)`
   background-image: linear-gradient(75.53deg, #5954cd 8.61%, #2d2a67 94.17%);
+  position: relative;
 `;
 
 function CreateCosmosApp({ Component, pageProps }: AppProps) {
@@ -29,8 +30,8 @@ function CreateCosmosApp({ Component, pageProps }: AppProps) {
 
   return (
     <ThemeProvider>
-      {/* @ts-ignore */}
-      <ChainProvider chains={chains}
+      <ChainProvider
+        chains={chains as unknown as (string)[]}
         assetLists={assets}
         wallets={wallets}
         walletConnectOptions={{

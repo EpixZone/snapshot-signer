@@ -1,9 +1,7 @@
 export const Logo = () => (
   <svg
-    className="svg-c9fc85f cc-svg"
     viewBox="0 0 708 229"
     xmlns="http://www.w3.org/2000/svg"
-    width="200"
     fill="none"
   >
     <path

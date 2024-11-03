@@ -1,6 +1,5 @@
 import {
   Box,
-  ClipboardCopyText,
   Stack,
   useColorModeValue,
   Button,
@@ -26,25 +25,131 @@ import {
 import { useState, useCallback, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
-import CustomModal from "./CustomModal";
+import { Dashboard } from "./Dashboard";
+import { Claim } from "./Claim";
+import { DetailsModal } from "./DetailsModal";
+import { ImageModel } from "./ImageModel";
+import { UserClaim } from "./UserClaim";
 
 const StyledButton = styled(Button)`
-  border-color: #69e9f5;
   border-radius: 50px;
   border-width: 3px;
   box-shadow: 0px 4px 4px 0px #00000040;
   border-style: solid;
-  color: #69e9f5;
+  color: #5954cd;
   background: transparent;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
   text-align: center;
-  padding: 20px 40px;
-  margin: 10px 0px;
-
+  padding: 24px 0;
+  width: 220px;
+  z-index: 10;
+  text-wrap: auto;
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-top: 6px;
+  margin-right: 4px;
+  background-image: linear-gradient(
+    90deg,
+    #b6ffb5 3.5%,
+    #69e9f5 35%,
+    #4ac8d2 66%,
+    #31bdc6 101.97%,
+    #31bdc6 101.98%,
+    #8a4bdb 101.99%,
+    #5954cd 102%
+  );
+  border-color: #8a4bdb;
   &:hover {
     transition: all 0.4s;
     cursor: pointer;
+  }
+  @media (max-width: 768px) {
+    padding: 15px 0;
+    font-size: 14px;
+  }
+
+  @media (max-width: 768px) {
+    position: inherit;
+  }
+`;
+
+const StyledButton2 = styled(Button)`
+  border-radius: 50px;
+  border-width: 3px;
+  box-shadow: 0px 4px 4px 0px #00000040;
+  border-style: solid;
+  color: #5954cd;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  padding: 24px 0;
+  width: 220px;
+  z-index: 10;
+  text-wrap: auto;
+  background-image: linear-gradient(
+    90deg,
+    #b6ffb5 3.5%,
+    #69e9f5 35%,
+    #4ac8d2 66%,
+    #31bdc6 101.97%,
+    #31bdc6 101.98%,
+    #8a4bdb 101.99%,
+    #5954cd 102%
+  );
+  border-color: #8a4bdb;
+  &:hover {
+    transition: all 0.4s;
+    cursor: pointer;
+  }
+  @media (max-width: 768px) {
+    padding: 15px 0;
+    font-size: 14px;
+  }
+`;
+
+const StyledButton3 = styled(Button)`
+  border-radius: 50px;
+  border-width: 3px;
+  box-shadow: 0px 4px 4px 0px #00000040;
+  border-style: solid;
+  color: #5954cd;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  padding: 24px 0;
+  width: 220px;
+  z-index: 10;
+  text-wrap: auto;
+  position: absolute;
+  top: 23px;
+  right: 0;
+  margin-top: 0px;
+  margin-right: 6px;
+  background-image: linear-gradient(
+    90deg,
+    #b6ffb5 3.5%,
+    #69e9f5 35%,
+    #4ac8d2 66%,
+    #31bdc6 101.97%,
+    #31bdc6 101.98%,
+    #8a4bdb 101.99%,
+    #5954cd 102%
+  );
+  border-color: #8a4bdb;
+  &:hover {
+    transition: all 0.4s;
+    cursor: pointer;
+  }
+  @media (max-width: 768px) {
+    padding: 15px 0;
+    font-size: 14px;
+  }
+  @media (max-width: 768px) {
+    position: inherit;
   }
 `;
 
@@ -55,34 +160,72 @@ const StyledStepButton = styled(Button)`
   color: #69e9f5;
   align-items: center;
   justify-content: center;
-  background: none;
+  background: ${({ disabled }) => (disabled ? "none" : "#8a4bdb")};
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 20px 40px;
+  width: 450px;
+  height: 150px;
+  margin: 2rem 0;
   box-shadow: inset 12px 16px 40px #0000001a, 10px 6px 50px -20px #00000030;
+
+  @media (max-width: 768px) {
+    height: 100px;
+    width: 300px;
+    margin: 1rem 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 20px;
+    margin: 1rem 0;
+  }
 `;
 
 const StyledStepTitle = styled(Text)`
-  font-size: 20px;
+  font-size: 32px;
   font-weight: 400;
-  font-family: Nikoleta, sans-serif;
   line-height: 1em;
   text-align: center;
   white-space: nowrap;
   display: inline-block;
-  color: transparent;
+  color: #69e9f5;
   -webkit-background-clip: text;
   background-clip: text;
-  background-image: linear-gradient(90deg, #31bdc6 0%, #c541e6 100%);
+  @media (max-width: 768px) {
+    font-size: 26px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const StyledStepDesc = styled(Text)`
-  font-size: 16px;
+  font-size: 24px;
   text-align: center;
   color: #69e9f5;
   white-space: nowrap;
   margin-top: 20px;
+  position: relative;
+  z-index: 10;
+
+  @media (max-width: 480px) {
+    margin-top: 10px;
+  }
+`;
+
+const ResponsiveBox = styled(Box)`
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin: 2rem 0;
+  position: relative;
+  z-index: 10;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0rem;
+  }
 `;
 
 export function Wallet() {
@@ -112,9 +255,24 @@ export function Wallet() {
   const [claims, setClaims] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isImageModalOpen, setImageModalOpen] = useState(false);
 
-  const openModal = () => setModalOpen(true);
+  const openImageModal = () => setImageModalOpen(true);
   const closeModal = () => setModalOpen(false);
+  const closeImageModal = () => setImageModalOpen(false);
+
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = async (link) => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(link));
+      setIsCopied(true);
+
+      setTimeout(() => setIsCopied(false), 3000);
+    } catch (error) {
+      console.error("Failed to copy text", error);
+    }
+  };
 
   useEffect(() => {
     // Fetch total claimed and total claims
@@ -185,9 +343,10 @@ export function Wallet() {
           setEligibilityMessage(
             `This address is eligible. Balance eligible for claim: ${(
               balanceResponse.data.balance / 100000000
-            ).toFixed(8)}. Estimated deduction: ${totalClaimed / 100000000 > 23689538 / 2
-              ? (balanceResponse.data.balance * 0.154).toFixed(8)
-              : 0
+            ).toFixed(8)}. Estimated deduction: ${
+              totalClaimed / 100000000 > 23689538 / 2
+                ? (balanceResponse.data.balance * 0.154).toFixed(8)
+                : 0
             }`
           );
           setIsEligible(true);
@@ -263,313 +422,213 @@ export function Wallet() {
     }
   };
 
-  const backgroundColor = useColorModeValue("#ffffff", "#1a202c");
-  const boxShadow = useColorModeValue(
-    "0 0 2px #dfdfdf, 0 0 6px -2px #d3d3d3",
-    "0 0 2px #363636, 0 0 8px -2px #4f4f4f"
-  );
   const textColor = useColorModeValue("#000000", "#ffffff");
 
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-around",
-          marginBottom: "32px",
-        }}
-      >
-        <StyledStepButton onClick={() => setStep(1)} disabled={step === 1}>
-          <StyledStepTitle>STEP 1</StyledStepTitle>
-          <StyledStepDesc>Eligibility</StyledStepDesc>
-        </StyledStepButton>
-        <StyledStepButton
-          onClick={() => setStep(2)}
-          disabled={!isEligible || step === 2}
-        >
-          <StyledStepTitle>STEP 2</StyledStepTitle>
-          <StyledStepDesc>Connect Wallet</StyledStepDesc>
-        </StyledStepButton>
-        <StyledStepButton
-          onClick={() => setStep(3)}
-          disabled={!epixAddress || !isEligible || step === 3}
-        >
-          <StyledStepTitle>STEP 3</StyledStepTitle>
-          <StyledStepDesc>Verify & Claim</StyledStepDesc>
-        </StyledStepButton>
+    <>
+      <div className="custom-container">
+        <ResponsiveBox>
+          <StyledStepButton
+            onClick={() => setStep(1)}
+            disabled={step === 2 || step === 3}
+          >
+            <StyledStepTitle>STEP 1</StyledStepTitle>
+            <StyledStepDesc>Eligibility</StyledStepDesc>
+          </StyledStepButton>
+
+          <StyledStepButton
+            onClick={() => setStep(2)}
+            disabled={!isEligible || step === 1 || step === 3}
+          >
+            <StyledStepTitle>STEP 2</StyledStepTitle>
+            <StyledStepDesc>Connect Wallet</StyledStepDesc>
+          </StyledStepButton>
+
+          <StyledStepButton
+            onClick={() => setStep(3)}
+            disabled={!epixAddress || !isEligible || step === 1 || step === 2}
+          >
+            <StyledStepTitle>STEP 3</StyledStepTitle>
+            <StyledStepDesc>Verify & Claim</StyledStepDesc>
+          </StyledStepButton>
+        </ResponsiveBox>
+
+        <div className="custom-container">
+          {step === 1 && (
+            <div className="step_1">
+              <h1>Check Eligibility</h1>
+              <Box py={8} px={8} className="box_wrapper">
+                <Box display="flex" flexDirection="column" marginBottom="1rem">
+                  <TextField
+                    id="x42"
+                    type="text"
+                    placeholder="Enter x42 wallet address"
+                    value={walletAddress}
+                    className="wallet_input"
+                    onChange={(e) => setWalletAddress(e.target.value)}
+                  />
+                  {isEligible ? (
+                    <div className="response-message">
+                      <img src="/images/right.svg" alt="correct message" />
+                      <span className="success_message">
+                        {eligibilityMessage}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="response-message">
+                      <img
+                        src="/images/wrong.svg"
+                        alt="correct message"
+                        style={{
+                          display: eligibilityMessage ? "block" : "none",
+                        }}
+                      />
+                      <span className="error_message">
+                        {eligibilityMessage}
+                      </span>
+                    </div>
+                  )}
+                </Box>
+                <Box
+                  display="flex"
+                  justifyContent="start"
+                  alignItems="center"
+                  flexWrap="wrap"
+                  gap={{ mobile: "0rem", tablet: "2rem" }}
+                >
+                  <StyledButton onClick={checkEligibility}>
+                    Check Eligibility
+                  </StyledButton>
+                  {isEligible && (
+                    <StyledButton onClick={() => setStep(2)}>
+                      Connect Wallet
+                    </StyledButton>
+                  )}
+                </Box>
+              </Box>
+            </div>
+          )}
+
+          {step === 2 && (
+            <Box py={8} px={8}>
+              <Stack>
+                <Chain
+                  name={chain.pretty_name}
+                  logo={getChainLogo(chain.chain_name)!}
+                />
+              </Stack>
+              <Stack direction="vertical">
+                {username ? <User name={username} /> : null}
+                {address ? (
+                  <div className="copy-container_1">
+                    <span>Copy Claim</span>
+                    <div
+                      className="copy_wrapper"
+                      onClick={() => handleCopy(address)}
+                    >
+                      {!isCopied ? (
+                        <img src="/images/copy.svg" alt="copy-icon" />
+                      ) : (
+                        <img src="/images/green.svg" alt="tick-green" />
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+                <Box
+                  my={4}
+                  flex="1"
+                  width="full"
+                  display="flex"
+                  height={16}
+                  overflow="hidden"
+                  justifyContent="center"
+                >
+                  {ConnectButton}
+                </Box>
+
+                {message &&
+                [WalletStatus.Error, WalletStatus.Rejected].includes(status) ? (
+                  <Warning text={`${wallet?.prettyName}: ${message}`} />
+                ) : null}
+
+                {address && (
+                  <StyledButton2 onClick={handleConnect}>
+                    Proceed to Step 3
+                  </StyledButton2>
+                )}
+              </Stack>
+            </Box>
+          )}
+
+          {step === 3 && (
+            <div>
+              <UserClaim claim={resultJson} address={address} />
+              <Box px={8} className="box_wrapper">
+                <Box width="full" attributes={{ py: "$8" }}>
+                  <TextField
+                    id="sign"
+                    type="text"
+                    placeholder="Enter your signature"
+                    value={signature}
+                    className="wallet_input"
+                    onChange={(e) => setSignature(e.target.value)}
+                  />
+                  {isClaimed ? (
+                    <div className="response-message">
+                      <img src="/images/right.svg" alt="correct message" />
+                      <span className="success_message">{claimedMessage}</span>
+                    </div>
+                  ) : (
+                    <div className="response-message">
+                      <img
+                        src="/images/wrong.svg"
+                        alt="correct message"
+                        style={{ display: claimedMessage ? "block" : "none" }}
+                      />
+                      <span className="error_message">{claimedMessage}</span>
+                    </div>
+                  )}
+                </Box>
+                <StyledButton3 onClick={validateAndClaim}>
+                  Claim your EPIX
+                </StyledButton3>
+              </Box>
+              <div className="signature" onClick={() => openImageModal()}>
+                <span>How to add your signature?</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {step === 1 && (
-        <Box py={8} px={4}>
-          <TextField
-            id="x42"
-            type="text"
-            placeholder="Enter x42 wallet address"
-            value={walletAddress}
-            onChange={(e) => setWalletAddress(e.target.value)}
-          // style={{
-          //   width: "100%",
-          //   padding: "8px",
-          //   borderRadius: "4px",
-          //   border: "1px solid #ccc",
-          // }}
-          />
-          <Box display="flex" justifyContent="space-between">
-            <StyledButton onClick={openModal}>More About</StyledButton>
-            <Box
-              my={4}
-              width="full"
-              display="flex"
-              flexDirection="column"
-              alignItems="flex-end"
-            >
-              <StyledButton onClick={checkEligibility}>
-                Check Eligibility
-              </StyledButton>
-              <Text color={textColor}>{eligibilityMessage}</Text>
-              {isEligible && (
-                <StyledButton onClick={() => setStep(2)}>
-                  Connect Wallet to Proceed to Step 2
-                </StyledButton>
-              )}
-            </Box>
-          </Box>
-        </Box>
-      )}
-
-      {step === 2 && (
-        <Box py={8} px={4}>
-          <Stack>
-            <Chain
-              name={chain.pretty_name}
-              logo={getChainLogo(chain.chain_name)!}
-            />
-          </Stack>
-          <Stack direction="vertical">
-            {username ? <User name={username} /> : null}
-            {address ? (
-              <ClipboardCopyText text={address} truncate="middle" />
-            ) : null}
-            <Box
-              my={4}
-              flex="1"
-              width="full"
-              display="flex"
-              height={16}
-              overflow="hidden"
-              justifyContent="center"
-            >
-              {ConnectButton}
-            </Box>
-
-            {message &&
-              [WalletStatus.Error, WalletStatus.Rejected].includes(status) ? (
-              <Warning text={`${wallet?.prettyName}: ${message}`} />
-            ) : null}
-
-            {address && (
-              <StyledButton onClick={handleConnect}>
-                Proceed to Step 3
-              </StyledButton>
-            )}
-          </Stack>
-        </Box>
-      )}
-
-      {step === 3 && (
-        <Box py={8} px={4}>
-          <Text color={textColor}>Step 3: JSON Result</Text>
-          <pre
-            style={{
-              backgroundColor: backgroundColor,
-              padding: "16px",
-              borderRadius: "8px",
-            }}
-          >
-            {JSON.stringify(resultJson)}
-          </pre>
-          <ClipboardCopyText
-            text={JSON.stringify(resultJson)}
-            truncate="middle"
-          />
-          <Box my={4} width="full" attributes={{ py: "$8" }}>
-            <TextField
-              id="sign"
-              type="text"
-              placeholder="Enter your signature"
-              value={signature}
-              onChange={(e) => setSignature(e.target.value)}
-            />
-          </Box>
-          <Box>
-            <StyledButton onClick={validateAndClaim}>
-              Validate and Claim your EPIX
-            </StyledButton>
-            <pre
-              style={{
-                backgroundColor: backgroundColor,
-                padding: "16px",
-                borderRadius: "8px",
-              }}
-            >
-              <Text color={isClaimed ? "green" : "red"}>{claimedMessage}</Text>
-            </pre>
-          </Box>
-          <Text color={textColor}>
-            Follow the instructions below to sign the message:
-          </Text>
-          <Box>
-            <img
-              src="/images/Sign-With-Wallet.png"
-              alt="Step to Sign the Message"
-              style={{ width: "100%", marginBottom: "16px" }}
-            />
-            <img
-              src="/images/Copy-Signature.png"
-              alt="Step to Copy Signature"
-              style={{ width: "100%" }}
-            />
-          </Box>
-        </Box>
-      )}
-
-      {step != 1 && <StyledButton onClick={openModal}>More About</StyledButton>}
-
       {/* Dashboard for Total Claimed and Total Claims */}
-      <CustomModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title="Description"
-      >
-        <Box py={8} px={4}>
-          <Text color={textColor}>Snapshot and Coin Circulation:</Text>
-          <Text color={textColor}>
-            On block 3 million, a snapshot will be taken of the total x42 coin
-            supply, which will be 23,689,538. This will be the total pool from
-            which both the community airdrop and the community pool allocation
-            will be derived.
-          </Text>
-          <Text color={textColor}>Ensuring a 50/50 Balance:</Text>
-          <Text color={textColor}>
-            To maintain this balance, every community member who claims their
-            airdrop may not receive a full 1:1 of their claimed X42:EPIX coins,
-            as a small amount will be allocated back to the community pool. This
-            will not be a voluntary process, but it will be automated, seamless,
-            and fair. Every claimer will have the same percentage removed to
-            maintain the balance.
-          </Text>
-          <Text color={textColor}>
-            For example, if the community claims 14 million EPIX, the target is
-            for the community to hold 11,844,769 coins and the community pool to
-            also hold 11,844,769 coins. To achieve this, the claim portal will
-            display a deduction of around 15.4% of the claimed coins from each
-            community member, which will be redirected to the community pool.
-          </Text>
-          <Text color={textColor}>
-            However, if fewer coins are claimed (e.g., 5 million), the community
-            pool would hold a much larger percentage than 50%, which would
-            actually benefit the community! In such cases, the deduction rate
-            would be lower, or no deduction may be required at all.
-          </Text>
-        </Box>
-      </CustomModal>
-      <hr />
-      <Box py={8} px={4}>
-        <Text color={textColor}>Dashboard</Text>
-        <Text color={textColor}>
-          Total Claimed: {(totalClaimed / 100000000).toFixed(8)}
-        </Text>
-        <Text color={textColor}>Total Claims: {totalClaims}</Text>
-        <Text color={textColor}>
-          Time Remaining to Claim the Airdrop:{" "}
-          {(() => {
-            const remainingTime = Math.max(
-              0,
-              new Date("2025-02-01T00:00:00Z").getTime() - Date.now()
-            );
-            const months = Math.floor(
-              remainingTime / (1000 * 60 * 60 * 24 * 30)
-            );
-            const days = Math.floor(
-              (remainingTime % (1000 * 60 * 60 * 24 * 30)) /
-              (1000 * 60 * 60 * 24)
-            );
-            const hours = Math.floor(
-              (remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-            );
-            const minutes = Math.floor(
-              (remainingTime % (1000 * 60 * 60)) / (1000 * 60)
-            );
-            return `${months} months, ${days} days, ${hours} hours, ${minutes} minutes`;
-          })()}
-        </Text>
-        <Text color={textColor}>
-          Remaining EPIX Tokens Available:{" "}
-          {(23689538 - totalClaimed / 100000000).toFixed(8)}
-        </Text>
-        <Text color={textColor}>
-          Deduction Percentage:{" "}
-          {(() => {
-            const claimed = totalClaimed / 100000000;
-            const targetBalance = 23689538 / 2;
-            return claimed > targetBalance
-              ? (((claimed - targetBalance) / claimed) * 100).toFixed(2)
-              : 0;
-          })()}
-          %
-        </Text>
-        <Text color={textColor}>
-          Community Pool vs Treasury Balance:{""}
-          {(() => {
-            const claimed = totalClaimed / 100000000;
-            const treasury = 23689538 - claimed;
-            return `Community: ${claimed.toFixed(
-              8
-            )}, Treasury: ${treasury.toFixed(8)}`;
-          })()}
-        </Text>
-      </Box>
-      <hr />
-      {/* Paginated List of Last 5 Claims */}
-      <Box py={8} px={4}>
-        <Box attributes={{ py: "$8" }}>
-          <Text color={textColor}>Last 5 Claims</Text>
-          {claims.map((claim: { raw_json: any; signature: string }, index) => (
-            <Box key={index}>
-              <Text color={textColor}>Raw JSON:</Text>
-              <pre
-                style={{
-                  backgroundColor: backgroundColor,
-                  padding: "8px",
-                  borderRadius: "4px",
-                }}
-              >
-                {JSON.stringify(claim.raw_json)}
-              </pre>
-              <Text color={textColor}>Signature: {claim.signature}</Text>
-            </Box>
-          ))}
-        </Box>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-          }}
-        >
-          <StyledButton
-            onClick={() => setCurrentPage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </StyledButton>
-          <StyledButton
-            onClick={() => setCurrentPage(currentPage + 1)}
-            disabled={claims.length < 5}
-          >
-            Next
-          </StyledButton>
+      <div className="dashboard">
+        <div className="custom-container">
+          <DetailsModal
+            isModalOpen={isModalOpen}
+            closeModal={closeModal}
+            textColor={textColor}
+          />
+          <ImageModel
+            isModalOpen={isImageModalOpen}
+            closeModal={closeImageModal}
+          />
+          {step !== 3 && (
+            <>
+              <Dashboard
+                totalClaims={totalClaims}
+                totalClaimed={totalClaimed}
+              />
+              <Claim
+                claims={claims}
+                handleCopy={handleCopy}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+              />
+            </>
+          )}
         </div>
-      </Box>
-    </div>
+      </div>
+    </>
   );
 }

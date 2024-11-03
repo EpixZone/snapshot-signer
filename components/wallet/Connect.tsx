@@ -31,6 +31,9 @@ export function Button({
           flex: 1,
           backgroundImage:
             "linear-gradient(109.6deg, rgba(157,75,199,1) 11.2%, rgba(119,81,204,1) 83.1%)",
+          position: "relative",
+          zIndex: "10",
+          marginBottom: "2rem"
         },
       }}
     >
