@@ -35,7 +35,7 @@ export const Navbar = () => {
     <>
       <div className="navbar">
         <div className="icon_Wrapper">
-          <Logo/>
+          <Logo />
           <Text
             as="span"
             fontSize={{ mobile: "$xl", tablet: "$2xl" }}
@@ -48,7 +48,7 @@ export const Navbar = () => {
         </div>
         <div className="epix_wrapper">
           <h3 className="modal-text" onClick={openModal}>
-            About Us
+            About Claimer
           </h3>
           <StyledText as="a" href="https://epix.zone/" target="_blank">
             <div className="global_wrapper">

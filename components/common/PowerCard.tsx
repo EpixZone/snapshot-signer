@@ -26,7 +26,7 @@ const StyledStepTitle = styled(Text)`
 `;
 
 const StyledStepDesc = styled(Text)`
-  font-size: 16px;
+  font-size: 20px;
   color: #fff;
   white-space: break-spaces;
   margin-top: 20px;
@@ -48,10 +48,10 @@ export const PowerCard = ({ title, value }) => {
       <div className="power-block">
         <img src="/images/Container.svg" alt="card background" />
         <div className="power-card-container">
-        <div className="text-wrapper">
-          <StyledStepTitle>{title}</StyledStepTitle>
-          <StyledStepDesc>{value}</StyledStepDesc>
-        </div>
+          <div className="text-wrapper">
+            <StyledStepTitle>{title}</StyledStepTitle>
+            <StyledStepDesc>{value}</StyledStepDesc>
+          </div>
         </div>
         {/* <div className="power-card-container">
           <div className="text-wrapper">

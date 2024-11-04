@@ -75,6 +75,51 @@ const StyledButton = styled(Button)`
   }
 `;
 
+
+const ConfirmedStyledButton = styled(Button)`
+  border-radius: 50px;
+  border-width: 3px;
+  box-shadow: 0px 4px 4px 0px #00000040;
+  border-style: solid;
+  color: #5954cd;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  padding: 24px 0;
+  width: 220px;
+  z-index: 10;
+  text-wrap: auto;
+  top: 0;
+  right: 0;
+  margin-top: 6px;
+  margin-right: 4px;
+  background-image: linear-gradient(
+    90deg,
+    #69f575 3.5%,
+    #69e9f5 35%,
+    #4ac8d2 66%,
+    #69f575 101.97%,
+    #31bdc6 101.98%,
+    #8a4bdb 101.99%,
+    #5954cd 102%
+  );
+  border-color: #8a4bdb;
+  &:hover {
+    transition: all 0.4s;
+    cursor: pointer;
+  }
+  @media (max-width: 768px) {
+    padding: 15px 0;
+    font-size: 14px;
+  }
+
+  @media (max-width: 768px) {
+    position: inherit;
+  }
+`;
+
+
 const StyledButton2 = styled(Button)`
   border-radius: 50px;
   border-width: 3px;
@@ -214,6 +259,20 @@ const StyledStepDesc = styled(Text)`
   }
 `;
 
+const ConfirmedStyledStepDesc = styled(Text)`
+  font-size: 24px;
+  text-align: center;
+  color: #69f575;
+  white-space: nowrap;
+  margin-top: 20px;
+  position: relative;
+  z-index: 10;
+
+  @media (max-width: 480px) {
+    margin-top: 10px;
+  }
+`;
+
 const ResponsiveBox = styled(Box)`
   display: flex;
   align-items: center;
@@ -275,6 +334,7 @@ export function Wallet() {
   };
 
   useEffect(() => {
+    console.log("Step: ", step);
     // Fetch total claimed and total claims
     const fetchTotalClaimed = async () => {
       try {
@@ -343,10 +403,9 @@ export function Wallet() {
           setEligibilityMessage(
             `This address is eligible. Balance eligible for claim: ${(
               balanceResponse.data.balance / 100000000
-            ).toFixed(8)}. Estimated deduction: ${
-              totalClaimed / 100000000 > 23689538 / 2
-                ? (balanceResponse.data.balance * 0.154).toFixed(8)
-                : 0
+            ).toFixed(8)}. Estimated deduction: ${totalClaimed / 100000000 > 23689538 / 2
+              ? (balanceResponse.data.balance * 0.154).toFixed(8)
+              : 0
             }`
           );
           setIsEligible(true);
@@ -430,7 +489,6 @@ export function Wallet() {
         <ResponsiveBox>
           <StyledStepButton
             onClick={() => setStep(1)}
-            disabled={step === 2 || step === 3}
           >
             <StyledStepTitle>STEP 1</StyledStepTitle>
             <StyledStepDesc>Eligibility</StyledStepDesc>
@@ -438,7 +496,7 @@ export function Wallet() {
 
           <StyledStepButton
             onClick={() => setStep(2)}
-            disabled={!isEligible || step === 1 || step === 3}
+            disabled={!isEligible}
           >
             <StyledStepTitle>STEP 2</StyledStepTitle>
             <StyledStepDesc>Connect Wallet</StyledStepDesc>
@@ -446,7 +504,7 @@ export function Wallet() {
 
           <StyledStepButton
             onClick={() => setStep(3)}
-            disabled={!epixAddress || !isEligible || step === 1 || step === 2}
+            disabled={!epixAddress || !isEligible}
           >
             <StyledStepTitle>STEP 3</StyledStepTitle>
             <StyledStepDesc>Verify & Claim</StyledStepDesc>
@@ -499,13 +557,13 @@ export function Wallet() {
                   <StyledButton onClick={checkEligibility}>
                     Check Eligibility
                   </StyledButton>
-                  {isEligible && (
-                    <StyledButton onClick={() => setStep(2)}>
-                      Connect Wallet
-                    </StyledButton>
-                  )}
                 </Box>
               </Box>
+              {isEligible && (
+                <ConfirmedStyledButton onClick={() => setStep(2)}>
+                  Connect Wallet
+                </ConfirmedStyledButton>
+              )}
             </div>
           )}
 
@@ -521,7 +579,7 @@ export function Wallet() {
                 {username ? <User name={username} /> : null}
                 {address ? (
                   <div className="copy-container_1">
-                    <span>Copy Claim</span>
+                    <span>Copy EPIX Address</span>
                     <div
                       className="copy_wrapper"
                       onClick={() => handleCopy(address)}
@@ -547,7 +605,7 @@ export function Wallet() {
                 </Box>
 
                 {message &&
-                [WalletStatus.Error, WalletStatus.Rejected].includes(status) ? (
+                  [WalletStatus.Error, WalletStatus.Rejected].includes(status) ? (
                   <Warning text={`${wallet?.prettyName}: ${message}`} />
                 ) : null}
 
