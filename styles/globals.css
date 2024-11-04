@@ -388,8 +388,12 @@ table thead tr {
 .response-message {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0 2px;
+  gap: .5rem;
+  margin: 20px 2px;
+  align-content: space-around;
+  justify-content: center;
+  background: linear-gradient(45deg, black, transparent);
+  height: 50px;
 }
 
 .response-message img {
