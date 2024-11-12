@@ -525,23 +525,13 @@ export function Wallet() {
                     className="wallet_input"
                     onChange={(e) => setWalletAddress(e.target.value)}
                   />
-                  {isEligible ? (
-                    <div className="response-message">
-                      <img src="/images/right.svg" alt="correct message" />
-                      <span className="success_message">
-                        {eligibilityMessage}
-                      </span>
-                    </div>
-                  ) : (
+                  {eligibilityMessage && (
                     <div className="response-message">
                       <img
-                        src="/images/wrong.svg"
+                        src={isEligible ? "/images/right.svg" : "/images/wrong.svg"}
                         alt="correct message"
-                        style={{
-                          display: eligibilityMessage ? "block" : "none",
-                        }}
                       />
-                      <span className="error_message">
+                      <span className={isEligible ? "success_message" : "error_message"}>
                         {eligibilityMessage}
                       </span>
                     </div>
