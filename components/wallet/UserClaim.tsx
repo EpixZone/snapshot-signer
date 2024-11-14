@@ -87,7 +87,7 @@ export const UserClaim = ({ claim, address }) => {
               <tr>
                 <StyledTableCell>{truncateHalf(claim?.x42_address)}</StyledTableCell>
                 <StyledTableCell>{truncateHalf(claim?.epix_address)}</StyledTableCell>
-                <StyledTableCell>{claim?.snapshot_balance}</StyledTableCell>
+                <StyledTableCell>{(claim?.snapshot_balance / 100000000).toFixed(8)}</StyledTableCell>
                 <StyledTableCell>{truncateHalf(address)}</StyledTableCell>
                 <StyledTableCell>
                   <div className="copy-container_2">

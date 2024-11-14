@@ -6,7 +6,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Head>
-        <title>Join the Epix Claimer</title>
+        <title>Epix Claimer</title>
         <meta name="description" content="Claim your Epix Airdrop" />
         <link
           rel="icon"
