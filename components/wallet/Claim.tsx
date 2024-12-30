@@ -128,7 +128,7 @@ export const Claim = ({ claims, currentPage, setCurrentPage, handleCopy }) => {
                       {truncateHalf(claim?.raw_json?.epix_address)}
                     </StyledTableCell>
                     <StyledTableCell>
-                      {claim?.raw_json?.snapshot_balance}
+                      {(claim?.raw_json?.snapshot_balance / 100000000).toFixed(8)}
                     </StyledTableCell>
                     <StyledTableCell>
                       <div className="copy-container">
