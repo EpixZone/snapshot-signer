@@ -392,7 +392,7 @@ export function Wallet() {
 
       const { isvalid, iswitness } = response.data;
 
-      if (isvalid && !iswitness) {
+      if (isvalid) {
         // Check the balance of the validated address
         const balanceResponse = await axios.get(
           `https://snapapi.epix.zone/check-balance?address=${walletAddress}`
