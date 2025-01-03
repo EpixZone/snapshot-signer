@@ -428,9 +428,6 @@ export function Wallet() {
           );
           setIsEligible(false);
         }
-      } else if (iswitness) {
-        setEligibilityMessage("This address cannot be a segwit address.");
-        setIsEligible(false);
       } else {
         setEligibilityMessage("This address is not valid.");
         setIsEligible(false);
