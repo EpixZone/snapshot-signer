@@ -386,6 +386,7 @@ export function Wallet() {
 
   const checkEligibility = useCallback(async () => {
     try {
+      // First verify the address format
       const response = await axios.get(
         `https://snapapi.epix.zone/verify-address?address=${walletAddress}`
       );
@@ -399,14 +400,26 @@ export function Wallet() {
         );
 
         if (balanceResponse.data.balance > 0) {
+          // Convert balance to EPIX format (divide by 100000000)
+          const balanceInEpix = balanceResponse.data.balance / 100000000;
           setSnapshotBalance(balanceResponse.data.balance);
+
+          // Calculate deduction percentage
+          const TOTAL_SUPPLY = 23689538;
+          const TARGET_AMOUNT = TOTAL_SUPPLY / 2; // 50% of total supply
+          const currentClaimed = totalClaimed / 100000000;
+
+          // Calculate deduction percentage only if we're over target
+          const deductionPercentage = currentClaimed > TARGET_AMOUNT
+            ? ((currentClaimed - TARGET_AMOUNT) / currentClaimed) * 100
+            : 0;
+
+          // Calculate the actual deduction amount for this address
+          const deductionAmount = balanceInEpix * (deductionPercentage / 100);
+
           setEligibilityMessage(
-            `This address is eligible. Balance eligible for claim: ${(
-              balanceResponse.data.balance / 100000000
-            ).toFixed(8)}. Estimated deduction: ${totalClaimed / 100000000 > 23689538 / 2
-              ? (balanceResponse.data.balance * 0.154).toFixed(8)
-              : 0
-            }`
+            `This address is eligible. Balance eligible for claim: ${balanceInEpix.toFixed(8)} EPIX. ` +
+            `Estimated deduction: ${deductionAmount.toFixed(8)} EPIX (${deductionPercentage.toFixed(2)}%)`
           );
           setIsEligible(true);
         } else {
@@ -423,12 +436,13 @@ export function Wallet() {
         setIsEligible(false);
       }
     } catch (error) {
+      console.error("Error in checkEligibility:", error);
       setEligibilityMessage(
         "Error checking address eligibility. Please try again."
       );
       setIsEligible(false);
     }
-  }, [walletAddress]);
+  }, [walletAddress, totalClaimed]);
 
   const handleConnect = () => {
     if (address) {
