@@ -3,6 +3,7 @@ import { Logo } from "./Logo";
 import styled from "styled-components";
 import { DetailsModal } from "../wallet/DetailsModal";
 import { useState } from "react";
+import { useRouter } from 'next/router';
 
 const StyledText = styled(Button)`
   border-radius: 50px;
@@ -27,6 +28,8 @@ const StyledText = styled(Button)`
 
 export const Navbar = () => {
   const [isModalOpen, setModalOpen] = useState(false);
+  const router = useRouter();
+  const showX42Interface = !!router.query.x42;
 
   const openModal = () => setModalOpen(true);
   const closeModal = () => setModalOpen(false);
@@ -43,13 +46,15 @@ export const Navbar = () => {
             textAlign="center"
             color="#69e9f5"
           >
-            Snapshot Claimer!
+            {showX42Interface ? "Snapshot Claimer!" : "Epix Vesting"}
           </Text>
         </div>
         <div className="epix_wrapper">
-          <h3 className="modal-text" onClick={openModal}>
-            About Claimer
-          </h3>
+          {showX42Interface && (
+            <h3 className="modal-text" onClick={openModal}>
+              About Claimer
+            </h3>
+          )}
           <StyledText as="a" href="https://epix.zone/" target="_blank">
             <div className="global_wrapper">
               <img src="/images/global.svg" alt="global earth icon" />

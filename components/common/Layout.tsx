@@ -14,7 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
       </Head>
       <Header />
-      {children}
+      <main>{children}</main>
       <Footer />
     </>
   );
