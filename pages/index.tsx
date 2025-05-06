@@ -1,9 +1,37 @@
 import { Layout, Wallet } from "@/components";
+import { EVMProvider } from "@/components/evm/EVMProvider";
+import { EVMWallet } from "@/components/evm/EVMWallet";
+import { Box, Stack, Text } from "@interchain-ui/react";
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
+  const router = useRouter();
+  const [showX42Interface, setShowX42Interface] = useState(false);
+
+  useEffect(() => {
+    // Check for x42 parameter in URL
+    const { x42 } = router.query;
+    setShowX42Interface(!!x42);
+  }, [router.query]);
+
   return (
     <Layout>
-      <Wallet />
+      <Stack attributes={{ direction: "vertical", spacing: "$8", padding: "$4" }}>
+        {showX42Interface && (
+          <Box>
+            <Text attributes={{ fontSize: "$2xl", fontWeight: "$semibold", marginBottom: "$4" }}>Cosmos Wallet</Text>
+            <Wallet />
+          </Box>
+        )}
+        
+        <Box>
+          <Text attributes={{ fontSize: "$2xl", fontWeight: "$semibold", marginBottom: "$4" }}>EVM Wallet</Text>
+          <EVMProvider>
+            <EVMWallet />
+          </EVMProvider>
+        </Box>
+      </Stack>
     </Layout>
   );
 }
