@@ -20,12 +20,10 @@ export default function Home() {
       <div style={{ padding: '2rem' }}>
         {showX42Interface ? (
           <Box>
-            <Text attributes={{ fontSize: "$2xl", fontWeight: "$semibold", marginBottom: "$4" }}>Cosmos Wallet</Text>
             <Wallet />
           </Box>
         ) : (
           <Box>
-            <Text attributes={{ fontSize: "$2xl", fontWeight: "$semibold", marginBottom: "$4" }}>EVM Wallet</Text>
             <EVMProvider>
               <EVMWallet />
             </EVMProvider>

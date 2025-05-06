@@ -1,6 +1,26 @@
 @import url("https://fonts.googleapis.com/css?family=Raleway:300,400,700&display=swap");
 @import url("https://fonts.cdnfonts.com/css/nikoleta");
 
+/* RainbowKit Modal Styles */
+[data-rk] {
+  --rk-overlay-z-index: 2147483646 !important;
+  --rk-modal-z-index: 2147483647 !important;
+}
+
+#portal-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2147483645;
+  pointer-events: none;
+}
+
+#portal-root>* {
+  pointer-events: auto;
+}
+
 html,
 body {
   padding: 0;
@@ -37,7 +57,7 @@ body {
 }
 
 .icon_Wrapper_2 svg {
-  width: 400px;
+  width: 250px;
 }
 
 .epix_wrapper {
@@ -402,7 +422,8 @@ table thead tr {
 }
 
 .section-cc8353f {
-  padding-top: 80px;
+  padding-top: 60px;
+  padding-bottom: 40px;
 }
 
 .cc-cntr {
@@ -422,12 +443,12 @@ table thead tr {
 }
 
 .div-c349960 {
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   justify-content: space-between;
-  row-gap: 40px;
-  -moz-column-gap: 40px;
-  column-gap: 40px;
+  row-gap: 30px;
+  -moz-column-gap: 30px;
+  column-gap: 30px;
   display: flex;
   flex-direction: row;
   margin: 0 3rem;
@@ -441,25 +462,35 @@ table thead tr {
 .div-c867877 {
   align-items: flex-start;
   justify-content: flex-start;
-  row-gap: 20px;
-  -moz-column-gap: 20px;
-  column-gap: 20px;
+  row-gap: 15px;
+  -moz-column-gap: 15px;
+  column-gap: 15px;
   display: flex;
   flex-direction: column;
 }
 
 .footer-mess-block {
   align-items: center;
-  row-gap: 40px;
-  -moz-column-gap: 40px;
-  column-gap: 40px;
+  row-gap: 20px;
+  -moz-column-gap: 20px;
+  column-gap: 20px;
   display: flex;
   flex-direction: row;
+  margin-bottom: 10px;
 }
 
-.svg-c5fa4bb {
-  height: 50px;
-  width: 50px;
+.footer-mess-block-icon {
+  height: 30px;
+  width: 30px;
+  color: #69e9f5;
+}
+
+.svg-c5fa4bb,
+.svg-c499e5b,
+.svg-c368884,
+.svg-c4e8119 {
+  height: 30px;
+  width: 30px;
 }
 
 .cc-btn svg,
@@ -470,6 +501,8 @@ table thead tr {
 .footer-mess-block-title {
   color: #69e9f5;
   font-weight: 400;
+  font-size: 14px;
+  margin-left: 8px;
 }
 
 .footer-mess-block-title p {
@@ -584,15 +617,27 @@ table thead tr {
   }
 
   .icon_Wrapper_2 svg {
-    width: 320px;
+    width: 180px;
   }
 
   .power-block {
     height: 375px;
   }
 
-  .icon_Wrapper_2 svg {
-    width: 200px;
+  .div-c349960 {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .div-c867877 {
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .footer-mess-block {
+    margin: 0 10px;
   }
 }
 
@@ -607,5 +652,26 @@ table thead tr {
 
   .power-card-container {
     width: 140px;
+  }
+
+  .footer-mess-block-icon {
+    height: 24px;
+    width: 24px;
+  }
+
+  .svg-c5fa4bb,
+  .svg-c499e5b,
+  .svg-c368884,
+  .svg-c4e8119 {
+    height: 24px;
+    width: 24px;
+  }
+
+  .footer-mess-block-title {
+    font-size: 12px;
+  }
+
+  .div-c867877 {
+    row-gap: 10px;
   }
 }

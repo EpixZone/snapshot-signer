@@ -10,12 +10,12 @@ export const Footer = () => {
             <Logo />
             <Text
               as="span"
-              fontSize={{ mobile: "$xl", tablet: "$2xl" }}
+              fontSize={{ mobile: "$md", tablet: "$lg" }}
               lineHeight={{ mobile: "0.8", tablet: "1" }}
               textAlign="center"
               color="#69e9f5"
             >
-              Snapshot Claimer!
+              Claimer!
             </Text>
           </div>
 
@@ -30,8 +30,8 @@ export const Footer = () => {
                 className="svg-c5fa4bb footer-mess-block-icon cc-svg"
                 viewBox="0 0 50 50"
                 xmlns="http://www.w3.org/2000/svg"
-                width="50"
-                height="50"
+                width="30"
+                height="30"
                 fill="none"
               >
                 <g clipPath="url(#clip0_3153_1831)">
@@ -60,8 +60,8 @@ export const Footer = () => {
                 className="svg-c499e5b footer-mess-block-icon cc-svg"
                 viewBox="0 0 40 42"
                 xmlns="http://www.w3.org/2000/svg"
-                width="40"
-                height="42"
+                width="30"
+                height="30"
                 fill="none"
               >
                 <path
@@ -83,8 +83,8 @@ export const Footer = () => {
                 className="svg-c368884 footer-mess-block-icon cc-svg"
                 viewBox="0 0 55 47"
                 xmlns="http://www.w3.org/2000/svg"
-                width="55"
-                height="47"
+                width="30"
+                height="30"
                 fill="none"
               >
                 <path
@@ -104,7 +104,13 @@ export const Footer = () => {
               rel="noopener"
               target="_blank"
             >
-              <div className="svg-c4e8119 footer-mess-block-icon cc-svg"></div>
+              <img
+                src="/images/documentation.svg"
+                alt="Documentation"
+                className="footer-mess-block-icon"
+                width="30"
+                height="30"
+              />
 
               <p className="footer-mess-block-title">Documentation</p>
             </a>
