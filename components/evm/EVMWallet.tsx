@@ -32,6 +32,67 @@ const vestingContractABI = [
     stateMutability: "nonpayable",
     inputs: [],
     outputs: []
+  },
+  {
+    name: "getGlobalStats",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "_totalAllocated", type: "uint256" },
+      { name: "_totalClaimed", type: "uint256" },
+      { name: "_totalUsers", type: "uint256" },
+      { name: "_remainingClaimable", type: "uint256" }
+    ]
+  },
+  {
+    name: "bizdevAllocation",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "addr", type: "address" },
+      { name: "totalAmount", type: "uint256" },
+      { name: "claimedAmount", type: "uint256" },
+      { name: "bonusAmount", type: "uint256" },
+      { name: "bonusUnlocked", type: "bool" },
+      { name: "isPaused", type: "bool" }
+    ]
+  },
+  {
+    name: "claimBizdevBonus",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: []
+  },
+  {
+    name: "pauseBizdevClaiming",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: []
+  },
+  {
+    name: "resumeBizdevClaiming",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: []
+  },
+  {
+    name: "clawBackBizdevRemaining",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [{ type: "uint256" }]
+  },
+  {
+    name: "clawBackBizdevBonus",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [{ type: "uint256" }]
   }
 ] as const;
 
@@ -41,7 +102,23 @@ type AllocationData = [bigint, bigint, boolean] & {
   exists: boolean;
 };
 
-const VESTING_CONTRACT_ADDRESS = '0xC43750C20BBD39601a0D55FC6719641D98Bcd87A' as `0x${string}`;
+type GlobalStatsData = [bigint, bigint, bigint, bigint] & {
+  _totalAllocated: bigint;
+  _totalClaimed: bigint;
+  _totalUsers: bigint;
+  _remainingClaimable: bigint;
+};
+
+type BizdevAllocationData = [string, bigint, bigint, bigint, boolean, boolean] & {
+  addr: string;
+  totalAmount: bigint;
+  claimedAmount: bigint;
+  bonusAmount: bigint;
+  bonusUnlocked: boolean;
+  isPaused: boolean;
+};
+
+const VESTING_CONTRACT_ADDRESS = '0x7603A6aDa1602F9bcBe82fffBad7312510958622' as `0x${string}`;
 
 // Add debug logging function
 const debug = (message: string, data?: any) => {
@@ -167,6 +244,41 @@ const StyledButton = styled(Button)`
   }
 `;
 
+const BonusButton = styled(Button)`
+  border-radius: 50px;
+  border-width: 3px;
+  box-shadow: 0px 4px 4px 0px #00000040;
+  border-style: solid;
+  color: #5954cd;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  padding: 24px 0;
+  width: 220px;
+  z-index: 10;
+  text-wrap: auto;
+  background-image: linear-gradient(
+    90deg,
+    #ffd700 3.5%,
+    #ffb347 35%,
+    #ffa500 66%,
+    #ff8c00 101.97%
+  );
+  border-color: #ffa500;
+  &:hover {
+    transition: all 0.4s;
+    cursor: pointer;
+    transform: translateY(-2px);
+    box-shadow: 0px 6px 8px 0px #00000040;
+  }
+
+  @media (max-width: 768px) {
+    padding: 15px 0;
+    font-size: 14px;
+  }
+`;
+
 // Styled container for wallet info
 const WalletInfoContainer = styled(Box)`
   background: rgba(42, 39, 103, 0.7);
@@ -191,6 +303,47 @@ const InfoText = styled(Text)`
   @media (max-width: 768px) {
     font-size: 16px;
   }
+`;
+
+// Styled text for bonus info
+const BonusInfoText = styled(Text)`
+  color: #ffd700;
+  font-size: 18px;
+  margin-bottom: 12px;
+
+  span {
+    color: white;
+    font-weight: 500;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+`;
+
+// Styled text for warning info
+const WarningInfoText = styled(Text)`
+  color: #ff6b6b;
+  font-size: 18px;
+  margin-bottom: 12px;
+
+  span {
+    color: white;
+    font-weight: 500;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+`;
+
+// Styled divider
+const Divider = styled(Box)`
+  margin-top: 16px;
+  margin-bottom: 16px;
+  height: 1px;
+  background-color: rgba(138, 75, 219, 0.3);
+  width: 100%;
 `;
 
 // Styled heading
@@ -254,6 +407,94 @@ const ProgressIndicator = styled.div`
   }
 `;
 
+// Styled global stats container
+const GlobalStatsContainer = styled(Box)`
+  background: rgba(42, 39, 103, 0.7);
+  border-radius: 20px;
+  border: 2px solid #8a4bdb;
+  padding: 24px;
+  margin-top: 24px;
+  box-shadow: inset 12px 16px 40px #0000001a, 10px 6px 50px -20px #00000030;
+`;
+
+// Styled global stats grid
+const StatsGrid = styled(Box) <{ simplified?: boolean }>`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (min-width: 768px) {
+    grid-template-columns: ${props => props.simplified ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'};
+  }
+`;
+
+// Styled stats card
+const StatsCard = styled(Box)`
+  background: rgba(42, 39, 103, 0.5);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+
+  h3 {
+    color: #69e9f5;
+    font-size: 16px;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  p {
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+  }
+`;
+
+// Styled global progress bar container
+const GlobalProgressContainer = styled(Box)`
+  margin-top: 24px;
+  padding: 0 16px;
+`;
+
+// Styled global progress bar
+const GlobalProgressBar = styled.div`
+  width: 100%;
+  height: 12px;
+  background: rgba(42, 39, 103, 0.5);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 8px;
+`;
+
+// Styled global progress fill
+const GlobalProgressFill = styled.div<{ progress: number }>`
+  position: absolute;
+  height: 100%;
+  width: ${props => `${props.progress}%`};
+  background-image: linear-gradient(
+    90deg,
+    #b6ffb5 3.5%,
+    #69e9f5 35%,
+    #4ac8d2 66%,
+    #31bdc6 101.97%
+  );
+  transition: width 0.5s ease;
+`;
+
+// Styled progress label
+const ProgressLabel = styled.div`
+  display: flex;
+  justify-content: space-between;
+  color: #69e9f5;
+  font-size: 14px;
+  margin-bottom: 16px;
+
+  span.percentage {
+    color: white;
+    font-weight: 500;
+  }
+`;
+
 export function EVMWallet() {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
@@ -270,6 +511,22 @@ export function EVMWallet() {
     args: address ? [address.toLowerCase() as `0x${string}`] : undefined,
     query: { enabled: !!address }
   }) as { data: AllocationData | undefined, error: Error | null };
+
+  // Read global stats from contract
+  const { data: globalStatsData, error: globalStatsError } = useReadContract({
+    address: VESTING_CONTRACT_ADDRESS,
+    abi: vestingContractABI,
+    functionName: 'getGlobalStats',
+    query: { enabled: true }
+  }) as { data: GlobalStatsData | undefined, error: Error | null };
+
+  // Read bizdev allocation from contract
+  const { data: bizdevAllocationData, error: bizdevAllocationError } = useReadContract({
+    address: VESTING_CONTRACT_ADDRESS,
+    abi: vestingContractABI,
+    functionName: 'bizdevAllocation',
+    query: { enabled: true }
+  }) as { data: BizdevAllocationData | undefined, error: Error | null };
 
   // Process allocation data
   const allocation = allocationData ? {
@@ -308,7 +565,61 @@ export function EVMWallet() {
     debug('Claimable Error:', claimableError);
   }
 
+  // Process global stats data
+  const globalStats = globalStatsData ? {
+    totalAllocated: globalStatsData[0],
+    totalClaimed: globalStatsData[1],
+    totalUsers: globalStatsData[2],
+    remainingClaimable: globalStatsData[3]
+  } : undefined;
+
+  // Log global stats data or error
+  if (globalStatsData) {
+    debug('Raw Global Stats Data:', globalStatsData);
+    debug('Processed Global Stats:', {
+      totalAllocated: globalStats?.totalAllocated ? formatEther(globalStats.totalAllocated) : '0',
+      totalClaimed: globalStats?.totalClaimed ? formatEther(globalStats.totalClaimed) : '0',
+      totalUsers: globalStats?.totalUsers ? globalStats.totalUsers.toString() : '0',
+      remainingClaimable: globalStats?.remainingClaimable ? formatEther(globalStats.remainingClaimable) : '0'
+    });
+  }
+  if (globalStatsError) {
+    debug('Global Stats Error:', globalStatsError);
+  }
+
+  // Process bizdev allocation data
+  const bizdevAllocation = bizdevAllocationData ? {
+    addr: bizdevAllocationData[0],
+    totalAmount: bizdevAllocationData[1],
+    claimedAmount: bizdevAllocationData[2],
+    bonusAmount: bizdevAllocationData[3],
+    bonusUnlocked: bizdevAllocationData[4],
+    isPaused: bizdevAllocationData[5]
+  } : undefined;
+
+  // Check if current user is the bizdev partner
+  const isBizdevPartner = address && bizdevAllocation ?
+    address.toLowerCase() === bizdevAllocation.addr.toLowerCase() : false;
+
+  // Log bizdev allocation data or error
+  if (bizdevAllocationData) {
+    debug('Raw Bizdev Allocation Data:', bizdevAllocationData);
+    debug('Processed Bizdev Allocation:', {
+      addr: bizdevAllocation?.addr,
+      totalAmount: bizdevAllocation?.totalAmount ? formatEther(bizdevAllocation.totalAmount) : '0',
+      claimedAmount: bizdevAllocation?.claimedAmount ? formatEther(bizdevAllocation.claimedAmount) : '0',
+      bonusAmount: bizdevAllocation?.bonusAmount ? formatEther(bizdevAllocation.bonusAmount) : '0',
+      bonusUnlocked: bizdevAllocation?.bonusUnlocked,
+      isPaused: bizdevAllocation?.isPaused
+    });
+    debug('Is Bizdev Partner:', isBizdevPartner);
+  }
+  if (bizdevAllocationError) {
+    debug('Bizdev Allocation Error:', bizdevAllocationError);
+  }
+
   const { writeContract, isPending: isClaimLoading } = useWriteContract();
+  const { isPending: isBonusClaimLoading } = useWriteContract();
 
   const handleClaim = async () => {
     if (!address || !chainId) return;
@@ -326,6 +637,25 @@ export function EVMWallet() {
     } catch (error) {
       debug('Claim Error:', error);
       console.error('Failed to claim:', error);
+    }
+  };
+
+  const handleClaimBonus = async () => {
+    if (!address || !chainId || !isBizdevPartner) return;
+    debug('Initiating bonus claim...', { address, chainId });
+    const chain = chains.find((c) => c.id === chainId);
+    try {
+      await writeContract({
+        address: VESTING_CONTRACT_ADDRESS,
+        abi: vestingContractABI,
+        functionName: 'claimBizdevBonus',
+        chain,
+        account: address as `0x${string}`,
+      });
+      debug('Bonus claim transaction submitted');
+    } catch (error) {
+      debug('Bonus Claim Error:', error);
+      console.error('Failed to claim bonus:', error);
     }
   };
 
@@ -406,6 +736,12 @@ export function EVMWallet() {
     return Number((allocation.claimedAmount * BigInt(100)) / allocation.totalAmount);
   };
 
+  // Calculate global progress percentage
+  const calculateGlobalProgress = () => {
+    if (!globalStats?.totalAllocated || globalStats.totalAllocated === BigInt(0)) return 0;
+    return Number((globalStats.totalClaimed * BigInt(100)) / globalStats.totalAllocated);
+  };
+
   return (
     <RainbowKitProvider
       theme={epixTheme}
@@ -417,6 +753,36 @@ export function EVMWallet() {
             <CustomConnectButton />
           </Box>
 
+          {/* Always show global stats summary */}
+          {globalStats && !isConnected && (
+            <GlobalStatsContainer>
+              <Heading style={{ fontSize: '24px', marginBottom: '16px', textAlign: 'center' }}>EPIX Vesting Stats</Heading>
+              <StatsGrid simplified={true}>
+                <StatsCard>
+                  <h3>Total Allocated</h3>
+                  <p>{formatEther(globalStats.totalAllocated)} EPIX</p>
+                </StatsCard>
+                <StatsCard>
+                  <h3>Total Claimed</h3>
+                  <p>{formatEther(globalStats.totalClaimed)} EPIX</p>
+                </StatsCard>
+              </StatsGrid>
+              <GlobalProgressContainer>
+                <ProgressLabel>
+                  <span>Claiming Progress</span>
+                  <span className="percentage">{calculateGlobalProgress().toFixed(2)}%</span>
+                </ProgressLabel>
+                <GlobalProgressBar>
+                  <GlobalProgressFill progress={calculateGlobalProgress()} />
+                </GlobalProgressBar>
+              </GlobalProgressContainer>
+
+              <Box textAlign="center" marginTop="16px">
+                <Text color="#69e9f5" fontSize="16px">Connect your wallet to claim your EPIX tokens</Text>
+              </Box>
+            </GlobalStatsContainer>
+          )}
+
           {isConnected && (
             <>
               <WalletInfoContainer>
@@ -424,6 +790,18 @@ export function EVMWallet() {
                 <InfoText>Total Allocation: <span>{allocation?.totalAmount ? formatEther(allocation.totalAmount) : '0'} EPIX</span></InfoText>
                 <InfoText>Claimed Amount: <span>{allocation?.claimedAmount ? formatEther(allocation.claimedAmount) : '0'} EPIX</span></InfoText>
                 <InfoText>Available to Claim: <span>{claimableAmount ? formatEther(claimableAmount) : '0'} EPIX</span></InfoText>
+
+                {/* Bonus information for bizdev partner */}
+                {isBizdevPartner && bizdevAllocation && (
+                  <>
+                    <Divider />
+                    <BonusInfoText>Bizdev Bonus: <span>{bizdevAllocation.bonusAmount ? formatEther(bizdevAllocation.bonusAmount) : '0'} EPIX</span></BonusInfoText>
+                    <BonusInfoText>Bonus Status: <span>{bizdevAllocation.bonusUnlocked ? 'Unlocked' : 'Locked'}</span></BonusInfoText>
+                    {bizdevAllocation.isPaused && (
+                      <WarningInfoText>Claiming Status: <span>Paused</span></WarningInfoText>
+                    )}
+                  </>
+                )}
 
                 {allocation?.totalAmount && allocation.totalAmount > BigInt(0) && (
                   <ProgressIndicator>
@@ -444,11 +822,51 @@ export function EVMWallet() {
                     {isClaimLoading ? 'Claiming...' : 'Claim EPIX'}
                   </StyledButton>
 
+                  {/* Bonus claim button - only visible to bizdev partner */}
+                  {isBizdevPartner && bizdevAllocation && bizdevAllocation.bonusUnlocked &&
+                    bizdevAllocation.bonusAmount > BigInt(0) && !bizdevAllocation.isPaused && (
+                      <BonusButton
+                        onClick={handleClaimBonus}
+                        disabled={isBonusClaimLoading}
+                      >
+                        {isBonusClaimLoading ? 'Claiming Bonus...' : 'Claim Bonus'}
+                      </BonusButton>
+                    )}
+
                   <StyledButton onClick={() => disconnect()}>
                     Disconnect
                   </StyledButton>
                 </Box>
               </WalletInfoContainer>
+
+              {/* Global Stats Section */}
+              <GlobalStatsContainer>
+                <Heading style={{ fontSize: '24px', marginBottom: '16px' }}>Global Stats</Heading>
+                <StatsGrid>
+                  <StatsCard>
+                    <h3>Total Allocated</h3>
+                    <p>{globalStats?.totalAllocated ? formatEther(globalStats.totalAllocated) : '0'} EPIX</p>
+                  </StatsCard>
+                  <StatsCard>
+                    <h3>Total Claimed</h3>
+                    <p>{globalStats?.totalClaimed ? formatEther(globalStats.totalClaimed) : '0'} EPIX</p>
+                  </StatsCard>
+                  <StatsCard>
+                    <h3>Remaining Claimable</h3>
+                    <p>{globalStats?.remainingClaimable ? formatEther(globalStats.remainingClaimable) : '0'} EPIX</p>
+                  </StatsCard>
+                </StatsGrid>
+
+                <GlobalProgressContainer>
+                  <ProgressLabel>
+                    <span>Global Claiming Progress</span>
+                    <span className="percentage">{calculateGlobalProgress().toFixed(2)}%</span>
+                  </ProgressLabel>
+                  <GlobalProgressBar>
+                    <GlobalProgressFill progress={calculateGlobalProgress()} />
+                  </GlobalProgressBar>
+                </GlobalProgressContainer>
+              </GlobalStatsContainer>
 
               <Box marginTop="24px" textAlign="center">
                 <a

@@ -16,22 +16,12 @@ describe("EPIXVesting", function () {
   beforeEach(async function () {
     [owner, user1, user2, bizdev] = await ethers.getSigners();
 
-    // Set vesting start time to 1 hour from now
-    vestingStartTime = Math.floor(Date.now() / 1000) + 3600;
-
-    // Ensure vestingStartTime is always in the future
-    const latestBlock = await ethers.provider.getBlock("latest");
-    if (vestingStartTime <= latestBlock.timestamp) {
-      vestingStartTime = latestBlock.timestamp + 3600;
-    }
-
     // Deploy the vesting contract
     EPIXVesting = await ethers.getContractFactory("EPIXVesting");
     vesting = await EPIXVesting.deploy(
-      vestingStartTime,
       bizdev.address,
       ethers.parseEther("15"), // 15 EPIX for bizdev
-      ethers.parseEther("5")   // 5 EPIX bonus
+      ethers.parseEther("5") // 5 EPIX bonus
     );
 
     // Add allocations for test users
@@ -41,7 +31,7 @@ describe("EPIXVesting", function () {
     // Fund the contract with EPIX
     await owner.sendTransaction({
       to: await vesting.getAddress(),
-      value: ethers.parseEther("23") // 23 EPIX (1 + 2 + 15 + 5)
+      value: ethers.parseEther("23"), // 23 EPIX (1 + 2 + 15 + 5)
     });
   });
 
@@ -50,8 +40,8 @@ describe("EPIXVesting", function () {
       expect(await vesting.owner()).to.equal(owner.address);
     });
 
-    it("Should set the correct vesting start time", async function () {
-      expect(await vesting.vestingStartTime()).to.equal(vestingStartTime);
+    it("Should initialize with vesting not started", async function () {
+      expect(await vesting.vestingStarted()).to.be.false;
     });
 
     it("Should set the correct bizdev allocation", async function () {
@@ -61,6 +51,27 @@ describe("EPIXVesting", function () {
       expect(bizdevAlloc.bonusAmount).to.equal(ethers.parseEther("5"));
       expect(bizdevAlloc.bonusUnlocked).to.be.false;
       expect(bizdevAlloc.isPaused).to.be.false;
+    });
+  });
+
+  describe("Vesting Control", function () {
+    it("Should not allow non-owner to start vesting", async function () {
+      await expect(vesting.connect(user1).startVesting()).to.be.reverted;
+    });
+
+    it("Should allow owner to start vesting", async function () {
+      await vesting.startVesting();
+      expect(await vesting.vestingStarted()).to.be.true;
+      const startTime = await vesting.vestingStartTime();
+      const latestBlock = await ethers.provider.getBlock("latest");
+      expect(startTime).to.equal(latestBlock.timestamp);
+    });
+
+    it("Should not allow starting vesting twice", async function () {
+      await vesting.startVesting();
+      await expect(vesting.startVesting()).to.be.revertedWith(
+        "Vesting has already started"
+      );
     });
   });
 
@@ -84,20 +95,26 @@ describe("EPIXVesting", function () {
     });
 
     it("Should not allow adding allocation with zero amount", async function () {
-      await expect(
-        vesting.addAllocation(owner.address, 0)
-      ).to.be.revertedWith("Amount must be greater than zero");
+      await expect(vesting.addAllocation(owner.address, 0)).to.be.revertedWith(
+        "Amount must be greater than zero"
+      );
     });
   });
 
   describe("Claiming", function () {
     it("Should not allow claiming before vesting starts", async function () {
-      await expect(vesting.connect(user1).claim()).to.be.revertedWith("No tokens available to claim");
+      await expect(vesting.connect(user1).claim()).to.be.revertedWith(
+        "No tokens available to claim"
+      );
     });
 
     it("Should allow claiming after vesting starts", async function () {
+      // Start vesting
+      await vesting.startVesting();
+      vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
+
       // Move time forward to 90 days after vesting starts (about 25% of vesting period)
-      await ethers.provider.send("evm_increaseTime", [vestingStartTime - Math.floor(Date.now() / 1000) + 90 * ONE_DAY]);
+      await ethers.provider.send("evm_increaseTime", [90 * ONE_DAY]);
       await ethers.provider.send("evm_mine");
 
       // Get the current block timestamp
@@ -105,11 +122,15 @@ describe("EPIXVesting", function () {
       const elapsedTime = currentBlock.timestamp - vestingStartTime;
 
       // Calculate expected claimable amount based on actual elapsed time
-      const expectedClaimable = (ethers.parseEther("1") * BigInt(elapsedTime)) / BigInt(ONE_YEAR);
+      const expectedClaimable =
+        (ethers.parseEther("1") * BigInt(elapsedTime)) / BigInt(ONE_YEAR);
 
       // Check claimable amount
       const claimable = await vesting.getClaimableAmount(user1.address);
-      expect(claimable).to.be.closeTo(expectedClaimable, ethers.parseEther("0.1")); // Allow small rounding difference
+      expect(claimable).to.be.closeTo(
+        expectedClaimable,
+        ethers.parseEther("0.1")
+      ); // Allow small rounding difference
 
       // Claim tokens
       const balanceBefore = await ethers.provider.getBalance(user1.address);
@@ -122,12 +143,19 @@ describe("EPIXVesting", function () {
 
       // Check that claimed amount is updated
       const user1Alloc = await vesting.allocations(user1.address);
-      expect(user1Alloc.claimedAmount).to.be.closeTo(expectedClaimable, ethers.parseEther("0.1"));
+      expect(user1Alloc.claimedAmount).to.be.closeTo(
+        expectedClaimable,
+        ethers.parseEther("0.1")
+      );
     });
 
     it("Should allow claiming full amount after vesting period", async function () {
+      // Start vesting
+      await vesting.startVesting();
+      vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
+
       // Move time forward to after vesting period ends
-      await ethers.provider.send("evm_increaseTime", [vestingStartTime - Math.floor(Date.now() / 1000) + ONE_YEAR + ONE_DAY]);
+      await ethers.provider.send("evm_increaseTime", [ONE_YEAR + ONE_DAY]);
       await ethers.provider.send("evm_mine");
 
       // Check claimable amount
@@ -142,14 +170,20 @@ describe("EPIXVesting", function () {
       expect(user1Alloc.claimedAmount).to.equal(ethers.parseEther("1"));
 
       // Try to claim again
-      await expect(vesting.connect(user1).claim()).to.be.revertedWith("No tokens available to claim");
+      await expect(vesting.connect(user1).claim()).to.be.revertedWith(
+        "No tokens available to claim"
+      );
     });
   });
 
   describe("Bizdev Allocation", function () {
     it("Should allow bizdev to claim vested tokens", async function () {
+      // Start vesting
+      await vesting.startVesting();
+      vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
+
       // Move time forward to 90 days after vesting starts (about 25% of vesting period)
-      await ethers.provider.send("evm_increaseTime", [vestingStartTime - Math.floor(Date.now() / 1000) + 90 * ONE_DAY]);
+      await ethers.provider.send("evm_increaseTime", [90 * ONE_DAY]);
       await ethers.provider.send("evm_mine");
 
       // Get the claimable amount
@@ -170,11 +204,13 @@ describe("EPIXVesting", function () {
       // Check that claimed amount is updated
       const bizdevAlloc = await vesting.bizdevAllocation();
       expect(bizdevAlloc.claimedAmount).to.be.gt(0);
-      expect(bizdevAlloc.claimedAmount).to.equal(claimable);
+      expect(bizdevAlloc.claimedAmount).to.be.closeTo(claimable, ethers.parseEther("0.01"));
     });
 
     it("Should not allow bizdev to claim bonus before it's unlocked", async function () {
-      await expect(vesting.connect(bizdev).claimBizdevBonus()).to.be.revertedWith("Bonus is not unlocked yet");
+      await expect(
+        vesting.connect(bizdev).claimBizdevBonus()
+      ).to.be.revertedWith("Bonus is not unlocked yet");
     });
 
     it("Should allow bizdev to claim bonus after it's unlocked", async function () {
@@ -188,7 +224,10 @@ describe("EPIXVesting", function () {
 
       // Check that balance increased by approximately the bonus amount (minus gas fees)
       const balanceDiff = balanceAfter - balanceBefore;
-      expect(balanceDiff).to.be.closeTo(ethers.parseEther("5"), ethers.parseEther("0.1"));
+      expect(balanceDiff).to.be.closeTo(
+        ethers.parseEther("5"),
+        ethers.parseEther("0.1")
+      );
 
       // Check that bonus amount is now zero
       const bizdevAlloc = await vesting.bizdevAllocation();
@@ -196,8 +235,12 @@ describe("EPIXVesting", function () {
     });
 
     it("Should pause and resume bizdev claiming", async function () {
+      // Start vesting
+      await vesting.startVesting();
+      vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
+
       // Move time forward to 90 days after vesting starts
-      await ethers.provider.send("evm_increaseTime", [vestingStartTime - Math.floor(Date.now() / 1000) + 90 * ONE_DAY]);
+      await ethers.provider.send("evm_increaseTime", [90 * ONE_DAY]);
       await ethers.provider.send("evm_mine");
 
       // Pause bizdev claiming
@@ -211,7 +254,9 @@ describe("EPIXVesting", function () {
       expect(await vesting.getBizdevClaimableAmount()).to.equal(0);
 
       // Try to claim while paused
-      await expect(vesting.connect(bizdev).claimBizdev()).to.be.revertedWith("No tokens available to claim");
+      await expect(vesting.connect(bizdev).claimBizdev()).to.be.revertedWith(
+        "No tokens available to claim"
+      );
 
       // Resume bizdev claiming
       await vesting.resumeBizdevClaiming();

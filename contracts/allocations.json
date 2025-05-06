@@ -5,16 +5,12 @@
       "amount": "1000000000000000000"
     },
     {
-      "address": "0xfC7F8Cc702E689e5534a248B6303E89CeBF48521",
-      "amount": "1000000000000000000"
-    },
-    {
       "address": "0x33E16DDFB7308B286bf4D31FCf0B9BBB0C5A6658",
       "amount": "1000000000000000000"
     }
   ],
   "bizdev": {
-    "address": "0xbf8308dB0f9F57fd4296Fb83ebf68126e7CB0213",
+    "address": "0xfC7F8Cc702E689e5534a248B6303E89CeBF48521",
     "amount": "1000000000000000000",
     "bonus": "500000000000000000"
   }

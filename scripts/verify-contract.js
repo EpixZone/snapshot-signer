@@ -6,7 +6,7 @@ async function main() {
     "https://evmrpc.testnet.epix.zone/"
   );
 
-  const contractAddress = "0xC43750C20BBD39601a0D55FC6719641D98Bcd87A";
+  const contractAddress = "0x38455C3E9111e791916C354B70A416Ba91D1177E";
   const userAddress = "0x33e16ddfb7308b286bf4d31fcf0b9bbb0c5a6658";
 
   // Contract ABI for the functions we need
