@@ -1,6 +1,33 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+const { formatEther, parseEther } = require("ethers");
+
+// Maximum amount that can be sent in a single transaction
+const MAX_TRANSACTION_VALUE = parseEther("1000000"); // 1000000 EPIX per transaction
+
+/**
+ * Splits a large amount into smaller chunks that can be sent in separate transactions
+ * @param {bigint} totalAmount - The total amount to send
+ * @returns {bigint[]} An array of smaller amounts that sum up to the total amount
+ */
+function splitIntoChunks(totalAmount) {
+  const chunks = [];
+  let remainingAmount = totalAmount;
+
+  while (remainingAmount > 0n) {
+    if (remainingAmount > MAX_TRANSACTION_VALUE) {
+      chunks.push(MAX_TRANSACTION_VALUE);
+      remainingAmount -= MAX_TRANSACTION_VALUE;
+    } else {
+      chunks.push(remainingAmount);
+      remainingAmount = 0n;
+    }
+  }
+
+  return chunks;
+}
+
 
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
@@ -58,14 +85,41 @@ async function main() {
     BigInt(bizdevBonus);
 
   console.log("Total amount needed:", totalAmount.toString());
+  console.log("Total amount needed in EPIX:", formatEther(totalAmount));
 
-  // Fund the contract
-  console.log("Funding the contract with", totalAmount.toString(), "wei...");
-  const fundTx = await deployer.sendTransaction({
-    to: vestingAddress,
-    value: totalAmount,
-  });
-  await fundTx.wait();
+  // Check if deployer has enough balance before funding
+  const deployerBalance = await hre.ethers.provider.getBalance(deployer.address);
+  console.log("Your balance:", formatEther(deployerBalance), "EPIX");
+  // Compare balance with required amount
+  if (deployerBalance < totalAmount) {
+    console.error(`Insufficient balance. You need ${formatEther(totalAmount)} EPIX but only have ${formatEther(deployerBalance)} EPIX.`);
+    process.exit(1);
+  }
+
+  // Send transaction(s) to fund the contract
+  console.log(`Sending ${formatEther(totalAmount)} EPIX to ${vestingAddress}...`);
+
+  // Split the amount into chunks if it's too large
+  const chunks = splitIntoChunks(totalAmount);
+  console.log(`Transaction will be split into ${chunks.length} chunk(s) to avoid size limitations`);
+
+  let totalSent = 0n;
+  for (let i = 0; i < chunks.length; i++) {
+    const chunkAmount = chunks[i];
+    console.log(`Sending chunk ${i + 1}/${chunks.length}: ${formatEther(chunkAmount)} EPIX...`);
+
+    const tx = await deployer.sendTransaction({
+      to: vestingAddress,
+      value: chunkAmount
+    });
+
+    console.log(`Transaction hash: ${tx.hash}`);
+    console.log("Waiting for transaction confirmation...");
+
+    await tx.wait();
+    totalSent += chunkAmount;
+    console.log(`Progress: ${formatEther(totalSent)}/${formatEther(totalAmount)} EPIX sent`);
+  }
   console.log("Contract funded successfully");
 
   // Start vesting

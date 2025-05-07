@@ -49,6 +49,7 @@ contract EPIXVesting is Ownable, ReentrancyGuard {
     uint256 public totalClaimed; // Total amount claimed by all users (excluding bizdev)
     uint256 public totalUsers; // Total number of users with allocations
     uint256 public originalBizdevBonus; // Original bizdev bonus amount (to track if claimed)
+    uint256 public totalTimesClaimed; // Total number of claim transactions
 
     // Events
     event TokensClaimed(address indexed user, uint256 amount);
@@ -91,6 +92,7 @@ contract EPIXVesting is Ownable, ReentrancyGuard {
         totalClaimed = 0;
         totalUsers = 0;
         originalBizdevBonus = _bizdevBonus;
+        totalTimesClaimed = 0;
     }
 
     /**
@@ -241,6 +243,7 @@ contract EPIXVesting is Ownable, ReentrancyGuard {
 
             // Update global stats to include bizdev claims
             totalClaimed += claimableAmount;
+            totalTimesClaimed += 1;
 
             // Transfer tokens to the bizdev partner
             (bool success, ) = payable(msg.sender).call{value: claimableAmount}(
@@ -255,6 +258,7 @@ contract EPIXVesting is Ownable, ReentrancyGuard {
 
             // Update global stats
             totalClaimed += claimableAmount;
+            totalTimesClaimed += 1;
 
             // Transfer tokens to the user
             // Since EPIX is a native L1 coin, we transfer the native currency
@@ -284,6 +288,7 @@ contract EPIXVesting is Ownable, ReentrancyGuard {
 
         // Update global stats to include bizdev claims
         totalClaimed += claimableAmount;
+        totalTimesClaimed += 1;
 
         // Transfer tokens to the bizdev partner
         (bool success, ) = payable(msg.sender).call{value: claimableAmount}("");
@@ -306,7 +311,10 @@ contract EPIXVesting is Ownable, ReentrancyGuard {
         uint256 bonusAmount = bizdevAllocation.bonusAmount;
         bizdevAllocation.bonusAmount = 0;
 
+        // Update the claimed amount to include the bonus
+        bizdevAllocation.claimedAmount += bonusAmount;
         totalClaimed += bonusAmount;
+        totalTimesClaimed += 1;
 
         // Transfer bonus tokens to the bizdev partner
         (bool success, ) = payable(msg.sender).call{value: bonusAmount}("");
@@ -413,13 +421,8 @@ contract EPIXVesting is Ownable, ReentrancyGuard {
      * @return Total allocated amount
      */
     function getTotalAllocated() public view returns (uint256) {
-        // Include the bonus amount only if it hasn't been claimed yet
-        uint256 bonusAmount = bizdevAllocation.bonusAmount;
-
-        // If bonus is unlocked and bonus amount is 0, it means the bonus was claimed
-        // In this case, we don't include it in the total allocated amount
-
-        return totalAllocated + bizdevAllocation.totalAmount + bonusAmount;
+        return
+            totalAllocated + bizdevAllocation.totalAmount + originalBizdevBonus;
     }
 
     /**
@@ -446,6 +449,7 @@ contract EPIXVesting is Ownable, ReentrancyGuard {
      * @return _totalClaimed Total claimed amount
      * @return _totalUsers Total number of users
      * @return _remainingClaimable Total amount that can still be claimed
+     * @return _totalTimesClaimed Total number of claim transactions
      */
     function getGlobalStats()
         public
@@ -454,19 +458,28 @@ contract EPIXVesting is Ownable, ReentrancyGuard {
             uint256 _totalAllocated,
             uint256 _totalClaimed,
             uint256 _totalUsers,
-            uint256 _remainingClaimable
+            uint256 _remainingClaimable,
+            uint256 _totalTimesClaimed
         )
     {
         _totalAllocated = getTotalAllocated();
         _totalClaimed = getTotalClaimed();
         _totalUsers = getTotalUsers();
-        _remainingClaimable = _totalAllocated - _totalClaimed;
+        _totalTimesClaimed = totalTimesClaimed;
+
+        // Prevent underflow by checking if claimed amount exceeds allocated amount
+        if (_totalClaimed > _totalAllocated) {
+            _remainingClaimable = 0;
+        } else {
+            _remainingClaimable = _totalAllocated - _totalClaimed;
+        }
 
         return (
             _totalAllocated,
             _totalClaimed,
             _totalUsers,
-            _remainingClaimable
+            _remainingClaimable,
+            _totalTimesClaimed
         );
     }
 

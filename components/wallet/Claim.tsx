@@ -49,7 +49,7 @@ const StyledTableHeader = styled.th`
 
 const StyledTableCell = styled.td`
   padding: 1rem;
-  color: ${({ theme }) => theme.textColor || "black"};
+  color: white;
   border-bottom: 1px solid #8a4bdb;
 
   tr:last-child & {

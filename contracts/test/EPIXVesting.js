@@ -10,8 +10,9 @@ describe("EPIXVesting", function () {
   let bizdev;
   let vestingStartTime;
 
-  const ONE_YEAR = 365 * 24 * 60 * 60; // 1 year in seconds
-  const ONE_DAY = 24 * 60 * 60; // 1 day in seconds
+  // Get the vesting period from the contract
+  let VESTING_PERIOD;
+  const ONE_MINUTE = 60; // 1 minute in seconds
 
   beforeEach(async function () {
     [owner, user1, user2, bizdev] = await ethers.getSigners();
@@ -23,6 +24,9 @@ describe("EPIXVesting", function () {
       ethers.parseEther("15"), // 15 EPIX for bizdev
       ethers.parseEther("5") // 5 EPIX bonus
     );
+
+    // Get the vesting period from the contract
+    VESTING_PERIOD = await vesting.VESTING_PERIOD();
 
     // Add allocations for test users
     await vesting.addAllocation(user1.address, ethers.parseEther("1")); // 1 EPIX
@@ -113,8 +117,8 @@ describe("EPIXVesting", function () {
       await vesting.startVesting();
       vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
 
-      // Move time forward to 90 days after vesting starts (about 25% of vesting period)
-      await ethers.provider.send("evm_increaseTime", [90 * ONE_DAY]);
+      // Move time forward to 15 minutes after vesting starts (25% of vesting period)
+      await ethers.provider.send("evm_increaseTime", [15 * ONE_MINUTE]);
       await ethers.provider.send("evm_mine");
 
       // Get the current block timestamp
@@ -123,7 +127,7 @@ describe("EPIXVesting", function () {
 
       // Calculate expected claimable amount based on actual elapsed time
       const expectedClaimable =
-        (ethers.parseEther("1") * BigInt(elapsedTime)) / BigInt(ONE_YEAR);
+        (ethers.parseEther("1") * BigInt(elapsedTime)) / BigInt(VESTING_PERIOD);
 
       // Check claimable amount
       const claimable = await vesting.getClaimableAmount(user1.address);
@@ -131,6 +135,10 @@ describe("EPIXVesting", function () {
         expectedClaimable,
         ethers.parseEther("0.1")
       ); // Allow small rounding difference
+
+      // Get global stats before claiming
+      const [totalAllocatedBefore, totalClaimedBefore, , , totalTimesClaimedBefore] = await vesting.getGlobalStats();
+      expect(totalTimesClaimedBefore).to.equal(0);
 
       // Claim tokens
       const balanceBefore = await ethers.provider.getBalance(user1.address);
@@ -147,6 +155,15 @@ describe("EPIXVesting", function () {
         expectedClaimable,
         ethers.parseEther("0.1")
       );
+
+      // Get global stats after claiming
+      const [totalAllocatedAfter, totalClaimedAfter, , , totalTimesClaimedAfter] = await vesting.getGlobalStats();
+
+      // Check that total claimed increased by the claimed amount
+      expect(totalClaimedAfter).to.be.closeTo(totalClaimedBefore + claimable, ethers.parseEther("0.1"));
+
+      // Check that times claimed increased by 1
+      expect(totalTimesClaimedAfter).to.equal(totalTimesClaimedBefore + BigInt(1));
     });
 
     it("Should allow claiming full amount after vesting period", async function () {
@@ -155,12 +172,15 @@ describe("EPIXVesting", function () {
       vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
 
       // Move time forward to after vesting period ends
-      await ethers.provider.send("evm_increaseTime", [ONE_YEAR + ONE_DAY]);
+      await ethers.provider.send("evm_increaseTime", [Number(VESTING_PERIOD) + ONE_MINUTE]);
       await ethers.provider.send("evm_mine");
 
       // Check claimable amount
       const claimable = await vesting.getClaimableAmount(user1.address);
       expect(claimable).to.equal(ethers.parseEther("1"));
+
+      // Get global stats before claiming
+      const [totalAllocatedBefore, totalClaimedBefore, , , totalTimesClaimedBefore] = await vesting.getGlobalStats();
 
       // Claim tokens
       await vesting.connect(user1).claim();
@@ -168,6 +188,15 @@ describe("EPIXVesting", function () {
       // Check that claimed amount is updated
       const user1Alloc = await vesting.allocations(user1.address);
       expect(user1Alloc.claimedAmount).to.equal(ethers.parseEther("1"));
+
+      // Get global stats after claiming
+      const [totalAllocatedAfter, totalClaimedAfter, , , totalTimesClaimedAfter] = await vesting.getGlobalStats();
+
+      // Check that total claimed increased by the claimed amount
+      expect(totalClaimedAfter).to.equal(totalClaimedBefore + ethers.parseEther("1"));
+
+      // Check that times claimed increased by 1
+      expect(totalTimesClaimedAfter).to.equal(totalTimesClaimedBefore + BigInt(1));
 
       // Try to claim again
       await expect(vesting.connect(user1).claim()).to.be.revertedWith(
@@ -182,13 +211,16 @@ describe("EPIXVesting", function () {
       await vesting.startVesting();
       vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
 
-      // Move time forward to 90 days after vesting starts (about 25% of vesting period)
-      await ethers.provider.send("evm_increaseTime", [90 * ONE_DAY]);
+      // Move time forward to 15 minutes after vesting starts (25% of vesting period)
+      await ethers.provider.send("evm_increaseTime", [15 * ONE_MINUTE]);
       await ethers.provider.send("evm_mine");
 
       // Get the claimable amount
       const claimable = await vesting.getBizdevClaimableAmount();
       expect(claimable).to.be.gt(0); // Should be greater than 0
+
+      // Get global stats before claiming
+      const [totalAllocatedBefore, totalClaimedBefore, , , totalTimesClaimedBefore] = await vesting.getGlobalStats();
 
       // Claim tokens
       const balanceBefore = await ethers.provider.getBalance(bizdev.address);
@@ -205,6 +237,15 @@ describe("EPIXVesting", function () {
       const bizdevAlloc = await vesting.bizdevAllocation();
       expect(bizdevAlloc.claimedAmount).to.be.gt(0);
       expect(bizdevAlloc.claimedAmount).to.be.closeTo(claimable, ethers.parseEther("0.01"));
+
+      // Get global stats after claiming
+      const [totalAllocatedAfter, totalClaimedAfter, , , totalTimesClaimedAfter] = await vesting.getGlobalStats();
+
+      // Check that total claimed increased by the claimed amount
+      expect(totalClaimedAfter).to.be.closeTo(totalClaimedBefore + claimable, ethers.parseEther("0.01"));
+
+      // Check that times claimed increased by 1
+      expect(totalTimesClaimedAfter).to.equal(totalTimesClaimedBefore + BigInt(1));
     });
 
     it("Should not allow bizdev to claim bonus before it's unlocked", async function () {
@@ -216,6 +257,13 @@ describe("EPIXVesting", function () {
     it("Should allow bizdev to claim bonus after it's unlocked", async function () {
       // Unlock bonus
       await vesting.unlockBizdevBonus();
+
+      // Get global stats before claiming
+      const [totalAllocatedBefore, totalClaimedBefore, , , totalTimesClaimedBefore] = await vesting.getGlobalStats();
+
+      // Get bonus amount
+      const bizdevAllocBefore = await vesting.bizdevAllocation();
+      const bonusAmount = bizdevAllocBefore.bonusAmount;
 
       // Claim bonus
       const balanceBefore = await ethers.provider.getBalance(bizdev.address);
@@ -232,6 +280,15 @@ describe("EPIXVesting", function () {
       // Check that bonus amount is now zero
       const bizdevAlloc = await vesting.bizdevAllocation();
       expect(bizdevAlloc.bonusAmount).to.equal(0);
+
+      // Get global stats after claiming
+      const [totalAllocatedAfter, totalClaimedAfter, , , totalTimesClaimedAfter] = await vesting.getGlobalStats();
+
+      // Check that total claimed increased by the bonus amount
+      expect(totalClaimedAfter).to.equal(totalClaimedBefore + bonusAmount);
+
+      // Check that times claimed increased by 1
+      expect(totalTimesClaimedAfter).to.equal(totalTimesClaimedBefore + BigInt(1));
     });
 
     it("Should pause and resume bizdev claiming", async function () {
@@ -239,8 +296,8 @@ describe("EPIXVesting", function () {
       await vesting.startVesting();
       vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
 
-      // Move time forward to 90 days after vesting starts
-      await ethers.provider.send("evm_increaseTime", [90 * ONE_DAY]);
+      // Move time forward to 15 minutes after vesting starts
+      await ethers.provider.send("evm_increaseTime", [15 * ONE_MINUTE]);
       await ethers.provider.send("evm_mine");
 
       // Pause bizdev claiming

@@ -5,7 +5,9 @@ describe("EPIXVesting Clawback", function () {
   let EPIXVesting;
   let vesting;
   let owner, user1, user2, bizdev;
-  const ONE_DAY = 86400; // 1 day in seconds
+  // Get the vesting period from the contract
+  let VESTING_PERIOD;
+  const ONE_MINUTE = 60; // 1 minute in seconds
   let vestingStartTime;
 
   beforeEach(async function () {
@@ -18,6 +20,9 @@ describe("EPIXVesting Clawback", function () {
       ethers.parseEther("15"), // 15 EPIX for bizdev
       ethers.parseEther("5") // 5 EPIX bonus
     );
+
+    // Get the vesting period from the contract
+    VESTING_PERIOD = await vesting.VESTING_PERIOD();
 
     // Add allocations for test users
     await vesting.addAllocation(user1.address, ethers.parseEther("1")); // 1 EPIX
@@ -36,8 +41,8 @@ describe("EPIXVesting Clawback", function () {
       await vesting.startVesting();
       vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
 
-      // Move time forward to 90 days after vesting starts (about 25% of vesting period)
-      await ethers.provider.send("evm_increaseTime", [90 * ONE_DAY]);
+      // Move time forward to 15 minutes after vesting starts (25% of vesting period)
+      await ethers.provider.send("evm_increaseTime", [15 * ONE_MINUTE]);
       await ethers.provider.send("evm_mine");
 
       // Get the claimable amount
@@ -45,7 +50,8 @@ describe("EPIXVesting Clawback", function () {
       expect(claimable).to.be.gt(0); // Should be greater than 0
 
       // Get global stats before claiming
-      const [totalAllocatedBefore, totalClaimedBefore, ,] = await vesting.getGlobalStats();
+      const [totalAllocatedBefore, totalClaimedBefore, , , totalTimesClaimedBefore] = await vesting.getGlobalStats();
+      expect(totalTimesClaimedBefore).to.equal(0);
 
       // Claim tokens using the regular claim function
       const balanceBefore = await ethers.provider.getBalance(bizdev.address);
@@ -64,13 +70,16 @@ describe("EPIXVesting Clawback", function () {
       expect(bizdevAlloc.claimedAmount).to.be.closeTo(claimable, ethers.parseEther("0.01"));
 
       // Get global stats after claiming
-      const [totalAllocatedAfter, totalClaimedAfter, ,] = await vesting.getGlobalStats();
+      const [totalAllocatedAfter, totalClaimedAfter, , , totalTimesClaimedAfter] = await vesting.getGlobalStats();
 
       // Check that total allocated remains the same
       expect(totalAllocatedAfter).to.equal(totalAllocatedBefore);
 
       // Check that total claimed increased by the claimed amount
       expect(totalClaimedAfter).to.be.closeTo(totalClaimedBefore + claimable, ethers.parseEther("0.01"));
+
+      // Check that times claimed increased by 1
+      expect(totalTimesClaimedAfter).to.equal(totalTimesClaimedBefore + BigInt(1));
     });
 
     it("Should update global stats when bizdev claims bonus", async function () {
@@ -81,7 +90,7 @@ describe("EPIXVesting Clawback", function () {
       await vesting.unlockBizdevBonus();
 
       // Get global stats before claiming
-      const [totalAllocatedBefore, totalClaimedBefore, ,] = await vesting.getGlobalStats();
+      const [totalAllocatedBefore, totalClaimedBefore, , , totalTimesClaimedBefore] = await vesting.getGlobalStats();
 
       // Get bonus amount
       const bizdevAllocBefore = await vesting.bizdevAllocation();
@@ -91,10 +100,10 @@ describe("EPIXVesting Clawback", function () {
       await vesting.connect(bizdev).claimBizdevBonus();
 
       // Get global stats after claiming
-      const [totalAllocatedAfter, totalClaimedAfter, ,] = await vesting.getGlobalStats();
+      const [totalAllocatedAfter, totalClaimedAfter, , , totalTimesClaimedAfter] = await vesting.getGlobalStats();
 
-      // Check that total allocated decreased by the bonus amount
-      expect(totalAllocatedAfter).to.equal(totalAllocatedBefore - bonusAmount);
+      // Check that total allocated remains the same (we're now using originalBizdevBonus)
+      expect(totalAllocatedAfter).to.equal(totalAllocatedBefore);
 
       // Check that total claimed increased by the bonus amount
       expect(totalClaimedAfter).to.equal(totalClaimedBefore + bonusAmount);
@@ -102,6 +111,9 @@ describe("EPIXVesting Clawback", function () {
       // Check that bonus amount is now zero
       const bizdevAllocAfter = await vesting.bizdevAllocation();
       expect(bizdevAllocAfter.bonusAmount).to.equal(0);
+
+      // Check that times claimed increased by 1
+      expect(totalTimesClaimedAfter).to.equal(totalTimesClaimedBefore + BigInt(1));
     });
   });
 
@@ -126,8 +138,8 @@ describe("EPIXVesting Clawback", function () {
       await vesting.startVesting();
       vestingStartTime = (await ethers.provider.getBlock("latest")).timestamp;
 
-      // Move time forward to 90 days after vesting starts (about 25% of vesting period)
-      await ethers.provider.send("evm_increaseTime", [90 * ONE_DAY]);
+      // Move time forward to 15 minutes after vesting starts (25% of vesting period)
+      await ethers.provider.send("evm_increaseTime", [15 * ONE_MINUTE]);
       await ethers.provider.send("evm_mine");
 
       // Pause bizdev claiming
@@ -135,7 +147,7 @@ describe("EPIXVesting Clawback", function () {
 
       // Get the claimable amount that would be available if not paused
       const totalAmount = (await vesting.bizdevAllocation()).totalAmount;
-      const elapsedTime = BigInt(90 * ONE_DAY);
+      const elapsedTime = BigInt(15 * ONE_MINUTE);
       const vestingPeriod = await vesting.VESTING_PERIOD();
       const vestedAmount = (totalAmount * elapsedTime) / vestingPeriod;
       const expectedClawbackAmount = vestedAmount;

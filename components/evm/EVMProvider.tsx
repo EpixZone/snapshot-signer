@@ -2,7 +2,6 @@ import { createConfig, http, WagmiProvider } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import { createChain } from 'viem/chains';
 
 const epixTestnet = {
   id: 1917,
@@ -41,4 +40,4 @@ export function EVMProvider({ children }: { children: ReactNode }) {
       </QueryClientProvider>
     </WagmiProvider>
   );
-} 
+}
