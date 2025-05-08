@@ -75,7 +75,7 @@ export const Footer = () => {
 
             <a
               className="footer-mess-block"
-              href="https://discord.gg/FC5N34wWbr"
+              href="https://discord.com/invite/bF2GKHgrfv"
               rel="noopener"
               target="_blank"
             >
