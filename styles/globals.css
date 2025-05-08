@@ -460,13 +460,14 @@ table thead tr {
 }
 
 .div-c867877 {
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
   row-gap: 15px;
-  -moz-column-gap: 15px;
-  column-gap: 15px;
+  -moz-column-gap: 20px;
+  column-gap: 20px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 
 .footer-mess-block {
@@ -476,7 +477,7 @@ table thead tr {
   column-gap: 20px;
   display: flex;
   flex-direction: row;
-  margin-bottom: 10px;
+  margin: 0 10px 10px 0;
 }
 
 .footer-mess-block-icon {
@@ -634,10 +635,11 @@ table thead tr {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
+    gap: 15px;
   }
 
   .footer-mess-block {
-    margin: 0 10px;
+    margin: 0 10px 0 0;
   }
 }
 

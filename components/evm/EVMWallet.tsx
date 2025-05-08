@@ -972,12 +972,6 @@ export function EVMWallet() {
         refetchOriginalBizdevBonus(),
         refetchClaimable()
       ]);
-      debug('Data refresh complete');
-      showNotification(
-        'Success!',
-        'Your dashboard has been refreshed',
-        'success'
-      );
     } catch (error) {
       debug('Error refreshing data:', error);
       showNotification(
