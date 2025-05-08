@@ -1,3 +1,5 @@
+'use client';
+
 import { useAccount, useDisconnect, useChainId, useChains, useSwitchChain } from 'wagmi';
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { formatEther } from 'viem';
@@ -7,6 +9,7 @@ import { ConnectButton, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbo
 import '@rainbow-me/rainbowkit/styles.css';
 import merge from 'lodash.merge';
 import { useEffect, useState } from 'react';
+import { isKeplrEVMAvailable, addEpixNetworkToKeplr } from '@/utils/keplrEvm';
 
 const vestingContractABI = [
   {
@@ -746,7 +749,7 @@ const Notification: React.FC<NotificationProps> = ({
 };
 
 export function EVMWallet() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const chains = useChains();
@@ -755,6 +758,7 @@ export function EVMWallet() {
   // State to track transaction hashes
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isKeplrWallet, setIsKeplrWallet] = useState(false);
 
   // State for notifications
   interface NotificationState {
@@ -765,6 +769,44 @@ export function EVMWallet() {
   }
 
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
+
+  // Check if the connected wallet is Keplr
+  useEffect(() => {
+    if (isConnected) {
+      // Check if Keplr is available in the browser
+      const keplrAvailable = isKeplrEVMAvailable();
+
+      // Check if the provider is from Keplr
+      // We need to check this asynchronously
+      const checkIfKeplrProvider = async () => {
+        try {
+          // Get the provider from the connector
+          const provider = await connector?.getProvider();
+
+          // Check if the provider has the Keplr flag or is from Keplr
+          const isKeplrProvider = provider &&
+            ((provider as any).isKeplr === true ||
+              (window.keplr && window.keplr.ethereum === provider));
+
+          setIsKeplrWallet(keplrAvailable && isKeplrProvider);
+
+          debug('Wallet Connection Info:', {
+            keplrAvailable,
+            connectorId: connector?.id,
+            isKeplrProvider,
+            isKeplrWallet: keplrAvailable && isKeplrProvider
+          });
+        } catch (error) {
+          console.error('Error checking if provider is Keplr:', error);
+          setIsKeplrWallet(false);
+        }
+      };
+
+      checkIfKeplrProvider();
+    } else {
+      setIsKeplrWallet(false);
+    }
+  }, [isConnected, connector]);
 
   // Function to show notifications
   const showNotification = (title: string, message: string, type: 'info' | 'success' | 'error') => {
@@ -782,16 +824,29 @@ export function EVMWallet() {
 
   // Check if we need to switch to EPIX testnet
   useEffect(() => {
-    if (isConnected && chainId !== 1917) {
-      // User is connected but not on EPIX testnet
-      debug('Connected to wrong network, attempting to switch to EPIX testnet');
-      try {
-        switchChain({ chainId: 1917 });
-      } catch (error) {
-        debug('Error switching chain:', error);
+    if (isConnected) {
+      if (chainId !== 1917) {
+        // User is connected but not on EPIX testnet
+        debug('Connected to wrong network, attempting to switch to EPIX testnet');
+
+        // Add a longer delay for Keplr to ensure the initial connection is fully established
+        const delay = isKeplrWallet ? 1000 : 500;
+
+        try {
+          const timer = setTimeout(() => {
+            debug(`Switching chain after ${delay}ms delay, isKeplrWallet: ${isKeplrWallet}`);
+            switchChain({ chainId: 1917 });
+          }, delay);
+
+          return () => clearTimeout(timer);
+        } catch (error) {
+          debug('Error switching chain:', error);
+        }
+      } else {
+        debug('Already connected to EPIX testnet');
       }
     }
-  }, [isConnected, chainId, switchChain]);
+  }, [isConnected, chainId, switchChain, isKeplrWallet]);
 
   // Read total allocation and claimed amount
   const { data: allocationData, error: allocationError, refetch: refetchAllocation } = useReadContract({
@@ -1104,7 +1159,11 @@ export function EVMWallet() {
                       >
                         Connect Wallet
                       </button>
-                      <Text color="#69e9f5" fontSize="16px">Connect your wallet to claim your EPIX tokens</Text>
+                      <Text color="#69e9f5" fontSize="16px">
+                        {keplrAvailable
+                          ? "Connect with Keplr to claim your tokens. You'll need to approve two connection requests: first for Ethereum, then for EPIX Testnet."
+                          : "Connect your wallet to claim your EPIX tokens"}
+                      </Text>
                     </div>
                   );
                 }
@@ -1128,13 +1187,18 @@ export function EVMWallet() {
                 }
 
                 return (
-                  <button
-                    onClick={openAccountModal}
-                    type="button"
-                    className="connect-button"
-                  >
-                    {account.displayName}
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                    <button
+                      onClick={openAccountModal}
+                      type="button"
+                      className="connect-button"
+                    >
+                      {account.displayName}
+                    </button>
+                    {isKeplrWallet && (
+                      <Text color="#69e9f5" fontSize="16px">Connected with Keplr Wallet</Text>
+                    )}
+                  </div>
                 );
               })()}
             </div>
@@ -1190,6 +1254,36 @@ export function EVMWallet() {
     return BigInt(0);
   };
 
+  // Check if Keplr is available for the UI
+  const keplrAvailable = isKeplrEVMAvailable();
+
+  // Function to add EPIX network to Keplr
+  const handleAddEpixToKeplr = async () => {
+    try {
+      await addEpixNetworkToKeplr(false); // false for testnet
+      showNotification(
+        'Switched Network',
+        'Keplr wallet switched to EPIX Testnet',
+        'success'
+      );
+    } catch (error) {
+      console.error('Failed to add EPIX network to Keplr:', error);
+      showNotification(
+        'Network Addition Failed',
+        'Failed to add EPIX Testnet to your Keplr wallet',
+        'error'
+      );
+    }
+  };
+
+  // Auto-add EPIX network to Keplr when it's detected
+  useEffect(() => {
+    if (keplrAvailable && isKeplrWallet) {
+      // Only try to add the network if the user is connected with Keplr
+      handleAddEpixToKeplr();
+    }
+  }, [keplrAvailable, isKeplrWallet]);
+
   return (
     <RainbowKitProvider
       theme={epixTheme}
@@ -1215,51 +1309,55 @@ export function EVMWallet() {
 
           {/* Always show global stats summary */}
           {!isConnected && (
-            <GlobalStatsContainer>
-              <Heading style={{ fontSize: '24px', marginBottom: '16px', textAlign: 'center' }}>EPIX Vesting Stats</Heading>
-              {globalStatsError ? (
-                <Box textAlign="center" padding="16px">
-                  <Text color="#ff6b6b" fontSize="16px">Error loading global stats. Please try again later.</Text>
-                </Box>
-              ) : globalStats ? (
-                <>
-                  <StatsGrid simplified={true}>
-                    <StatsCard>
-                      <h3>Total Allocated</h3>
-                      <p>{formatLargeNumber(formatEther(globalStats.totalAllocated))} EPIX</p>
-                    </StatsCard>
-                    <StatsCard>
-                      <h3>Total Claimed</h3>
-                      <p>{formatLargeNumber(formatEther(globalStats.totalClaimed))} EPIX</p>
-                    </StatsCard>
-                    <StatsCard>
-                      <h3>Times Claimed</h3>
-                      <p>{globalStats.totalTimesClaimed.toString()}</p>
-                    </StatsCard>
-                  </StatsGrid>
-                  <GlobalProgressContainer>
-                    <ProgressLabel>
-                      <span>Claiming Progress</span>
-                      <span className="percentage">{calculateGlobalProgress().toFixed(2)}%</span>
-                    </ProgressLabel>
-                    <GlobalProgressBar>
-                      <GlobalProgressFill progress={calculateGlobalProgress()} />
-                    </GlobalProgressBar>
-                  </GlobalProgressContainer>
-                </>
-              ) : (
-                <Box textAlign="center" padding="16px">
-                  <Text color="#69e9f5" fontSize="16px">Connect your wallet to view stats.</Text>
-                </Box>
-              )}
-            </GlobalStatsContainer>
+            <>
+              <GlobalStatsContainer>
+                <Heading style={{ fontSize: '24px', marginBottom: '16px', textAlign: 'center' }}>EPIX Vesting Stats</Heading>
+                {globalStatsError ? (
+                  <Box textAlign="center" padding="16px">
+                    <Text color="#ff6b6b" fontSize="16px">Error loading global stats. Please try again later.</Text>
+                  </Box>
+                ) : globalStats ? (
+                  <>
+                    <StatsGrid simplified={true}>
+                      <StatsCard>
+                        <h3>Total Allocated</h3>
+                        <p>{formatLargeNumber(formatEther(globalStats.totalAllocated))} EPIX</p>
+                      </StatsCard>
+                      <StatsCard>
+                        <h3>Total Claimed</h3>
+                        <p>{formatLargeNumber(formatEther(globalStats.totalClaimed))} EPIX</p>
+                      </StatsCard>
+                      <StatsCard>
+                        <h3>Times Claimed</h3>
+                        <p>{globalStats.totalTimesClaimed.toString()}</p>
+                      </StatsCard>
+                    </StatsGrid>
+                    <GlobalProgressContainer>
+                      <ProgressLabel>
+                        <span>Claiming Progress</span>
+                        <span className="percentage">{calculateGlobalProgress().toFixed(2)}%</span>
+                      </ProgressLabel>
+                      <GlobalProgressBar>
+                        <GlobalProgressFill progress={calculateGlobalProgress()} />
+                      </GlobalProgressBar>
+                    </GlobalProgressContainer>
+                  </>
+                ) : (
+                  <Box textAlign="center" padding="16px">
+                    <Text color="#69e9f5" fontSize="16px">Connect your wallet to view stats.</Text>
+                  </Box>
+                )}
+              </GlobalStatsContainer>
+            </>
           )}
 
           {isConnected && (
             <>
               <WalletInfoContainer>
                 <InfoText>
-                  <div>Connected:</div>
+                  <div>
+                    Connected{isKeplrWallet ? ' with Keplr' : ''}:
+                  </div>
                   <span>{address}</span>
                 </InfoText>
                 {/* Display total allocation based on whether the user is bizdev partner or regular user */}
