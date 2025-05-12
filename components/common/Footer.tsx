@@ -15,7 +15,6 @@ export const Footer = () => {
               textAlign="center"
               color="#69e9f5"
             >
-              Claimer!
             </Text>
           </div>
 

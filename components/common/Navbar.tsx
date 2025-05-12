@@ -46,7 +46,7 @@ export const Navbar = () => {
             textAlign="center"
             color="#69e9f5"
           >
-            {showX42Interface ? "Snapshot Claimer!" : "Vesting"}
+            {showX42Interface ? "Snapshot!" : "Claim"}
           </Text>
         </div>
         <div className="epix_wrapper">
