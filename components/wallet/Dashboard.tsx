@@ -23,7 +23,7 @@ export const Dashboard = ({ totalClaims, totalClaimed }) => {
           value={(() => {
             const remainingTime = Math.max(
               0,
-              new Date("2025-06-06T00:00:00Z").getTime() - Date.now()
+              new Date("2025-02-10T00:00:00Z").getTime() - Date.now()
             );
             const months = Math.floor(
               remainingTime / (1000 * 60 * 60 * 24 * 30)
